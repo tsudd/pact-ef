@@ -41,28 +41,30 @@ Integration Tests                      CI Validation Tests
   "consumerName": "OrderService",
   "capturedAt": "2026-05-14T10:23:00Z",
   "dbSchemaVersion": "20260512183045",
-  "tests": [
+  "queries": [
     {
+      "sql": "SELECT o.\"Id\", o.\"Status\"\nFROM \"Orders\" AS o\nWHERE o.\"Id\" = $1\nLIMIT 1",
+      "parameterTypes": ["integer"],
+      "executionCount": 3,
       "testName": "OrderRepository_GetById_ReturnsOrder",
-      "testClass": "OrderService.Tests.OrderRepositoryTests",
-      "queries": [
-        {
-          "sql": "SELECT o.\"Id\", o.\"CustomerId\", o.\"Status\"\nFROM \"Orders\" AS o\nWHERE o.\"Id\" = $1\nLIMIT 1",
-          "parameterTypes": ["integer"],
-          "executionCount": 1
-        }
-      ]
+      "testClass": "OrderService.Tests.OrderRepositoryTests"
+    },
+    {
+      "sql": "SELECT o.\"Id\"\nFROM \"Orders\" AS o",
+      "parameterTypes": [],
+      "executionCount": 1
     }
   ]
 }
 ```
 
 **Key decisions:**
-- `dbSchemaVersion` — timestamp prefix of the latest row in `__EFMigrationsHistory`, captured lazily on the first intercepted command (not at snapshot write time). Used in failure reports to identify which migration introduced a break.
+- `dbSchemaVersion` — timestamp prefix of the latest row in `__EFMigrationsHistory`, captured lazily on the first intercepted command. Used in failure reports to identify which migration introduced a break.
 - Parameter values are stripped; only DB types are kept. Sufficient for `EXPLAIN` without leaking test data.
-- Queries are deduplicated per test. Same SQL appearing N times → stored once with `executionCount: N`.
-- File is deterministically ordered (tests by class+name, queries by SQL text) for clean git diffs.
-- Queries with no resolvable test name go into an `"__unattributed__"` bucket — not silently dropped.
+- Queries are deduplicated across the entire snapshot. Same SQL shape appearing N times → stored once with `executionCount: N`.
+- `testName` and `testClass` are optional — present only when `[UsePactEfCapture]` was active for the test that triggered the query, absent otherwise.
+- File is deterministically ordered (queries sorted by SQL text) for clean git diffs.
+- Queries with no resolvable test name simply omit the test fields — they are not dropped or bucketed separately.
 
 ---
 
@@ -100,23 +102,32 @@ Registers an `IDbCommandInterceptor` into the EF Core pipeline. Hooks `ReaderExe
 
 For each captured command:
 - Strips parameter values, records parameter DB types
-- Resolves the current test name from `PactEfTestContext.Current` (see below)
-- Buffers the entry into `ConcurrentDictionary<string, ConcurrentBag<QueryEntry>>` keyed by test name
+- Reads `PactEfTestContext.Current` (see below) — if set, attaches `testName`/`testClass` to the entry; if not set, entry has no test attribution
+- Buffers the entry into `ConcurrentDictionary<string, ConcurrentBag<QueryEntry>>` keyed by SQL text
 
-### dbSchemaVersion
+`dbSchemaVersion` is captured lazily on the first intercepted DML command: queries `__EFMigrationsHistory` for the latest `MigrationId` and caches it in memory. Subsequent commands reuse the cached value.
 
-Captured lazily on the first intercepted DML command: queries `__EFMigrationsHistory` for the latest `MigrationId` (`SELECT "MigrationId" FROM "__EFMigrationsHistory" ORDER BY "MigrationId" DESC LIMIT 1`) and stores it in memory. Subsequent commands reuse the cached value.
+### Test Name Resolution (Optional)
 
-### Test Name Resolution
+Test attribution is opt-in. By default, no test framework wiring is needed and queries are captured without test names — **zero changes required to existing tests**.
 
-`PactEfTestContext.Current` is backed by `AsyncLocal<string>` — safe for parallel test execution.
+To opt in to test-level attribution, decorate test classes with `[UsePactEfCapture]`:
+
+```csharp
+[UsePactEfCapture]
+public class OrderRepositoryTests
+{
+    // all queries fired from these tests will include testName/testClass in the snapshot
+}
+```
+
+`[UsePactEfCapture]` is a **class-level** `BeforeAfterTestAttribute` (xUnit v2). It automatically sets/clears `PactEfTestContext.Current` (backed by `AsyncLocal<string>`) before and after each test method — safe for parallel execution.
 
 | Framework | Strategy |
 |-----------|----------|
-| xUnit     | Package provides `[UsePactEfCapture]` — a **class-level** `BeforeAfterTestAttribute`. Automatically sets/clears `PactEfTestContext.Current` before and after each test method. Consumer decorates their test class — no manual wiring required. |
-| NUnit     | `TestContext.CurrentContext.Test.FullName` |
-| MSTest    | `TestContext.TestName` |
-| Fallback  | `"__unattributed__"` bucket |
+| xUnit v2  | `[UsePactEfCapture]` class-level attribute provided by the package |
+| NUnit     | `TestContext.CurrentContext.Test.FullName` (automatic) |
+| MSTest    | `TestContext.TestName` (automatic) |
 
 ### Snapshot Writing
 
@@ -128,7 +139,7 @@ Triggered once at the end of the full test run via xUnit's assembly fixture mech
 
 `PactEfAssemblyFixture` implements `IAsyncLifetime`. On `DisposeAsync`:
 1. Uses the already-cached `dbSchemaVersion`
-2. Deduplicates queries per test, sorts deterministically (tests by class+name, queries by SQL text)
+2. Deduplicates queries by SQL text, sorts deterministically by SQL text
 3. Writes JSON to `<test-project-root>/pactef-snapshots/<ConsumerName>.json`
 
 One snapshot file is written per `ConsumerName`. If multiple `DbContext` types are registered with the same `ConsumerName`, their queries are merged into a single file.
@@ -212,16 +223,17 @@ Scans all configured `SnapshotSources` folders recursively for files matching `p
 
 ```
 FAILED  OrderService
-  OrderRepository_GetById_ReturnsOrder
-    SELECT o."Id", o."CustomerId" ...
-    ERROR: column o."CustomerId" does not exist (42703)
+  [OrderRepository_GetById_ReturnsOrder]   ← shown only if testName present
+    SELECT o."Id", o."Status" ...
+    ERROR: column o."Status" does not exist (42703)
     Schema captured against: 20260512183045 → current: 20260514091200
 
-FAILED  InventoryService
-  ...
+  SELECT o."Id" FROM "Orders" AS o         ← no test attribution
+    ERROR: relation "Orders" does not exist (42P01)
+    Schema captured against: 20260512183045 → current: 20260514091200
 ```
 
-`VerifyAllAsync` throws an aggregated exception listing all failures after checking every query — so a single xUnit/NUnit test method covers all consumers and reports all failures at once.
+`VerifyAllAsync` throws an aggregated exception listing all failures after checking every query. The verifier deduplicates queries across the entire snapshot before running — a query appearing multiple times (with or without test attribution) is validated once.
 
 ### Caught Postgres Error Codes
 

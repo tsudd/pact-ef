@@ -120,8 +120,8 @@ Triggered once at the end of the full test run (xUnit: assembly fixture `IAsyncL
 await PactEfVerifier.VerifyAllAsync(options =>
 {
     options.SnapshotSources = [
-        SnapshotSource.FromFolder("/ci/consumers/order-service"),
-        SnapshotSource.FromFolder("../order-service/tests"), // local monorepo
+        SnapshotSource.FromFolder("/ci/consumers/order-service"),          // CI: checked-out consumer repos
+        SnapshotSource.FromEnvVariable("PACTEF_SNAPSHOT_PATHS"),           // runtime override via env var
     ];
     options.ConnectionString = "<already migrated db connection string>";
     options.Provider = DbProvider.PostgreSql; // default
@@ -129,6 +129,23 @@ await PactEfVerifier.VerifyAllAsync(options =>
 ```
 
 The caller is fully responsible for provisioning and migrating the database before calling `VerifyAllAsync`. PactEf.Verify only receives a connection string.
+
+### Snapshot Source Types
+
+| Source | Behavior |
+|--------|----------|
+| `SnapshotSource.FromFolder(path)` | Reads from the given folder path. Error if path does not exist. |
+| `SnapshotSource.FromEnvVariable(name)` | Reads the env variable at runtime, splits by `;`, treats each entry as a folder path. Silently skipped if the variable is not set. |
+
+Sources are merged; duplicates are deduplicated by `consumerName` (last one wins).
+
+**Local monorepo usage** — set the env variable instead of hardcoding paths:
+
+```bash
+PACTEF_SNAPSHOT_PATHS="../order-service/tests;../inventory-service/tests" dotnet test
+```
+
+This means the verifier configuration in code only lists CI paths (`FromFolder`). Local developers override with `PACTEF_SNAPSHOT_PATHS` without touching code.
 
 ### Provider Strategy
 
@@ -237,14 +254,13 @@ Checks out main of each consumer repo and reads snapshots directly:
 
 ### Local Monorepo Usage
 
-```csharp
-options.SnapshotSources = [
-    SnapshotSource.FromFolder("../order-service/tests"),
-    SnapshotSource.FromFolder("../inventory-service/tests"),
-];
+Set `PACTEF_SNAPSHOT_PATHS` to a semicolon-separated list of local snapshot folders:
+
+```bash
+PACTEF_SNAPSHOT_PATHS="../order-service/tests;../inventory-service/tests" dotnet test
 ```
 
-No CI machinery needed for local runs.
+The verifier configuration in code only lists CI paths. Local developers override at runtime without touching code. No CI machinery needed for local runs.
 
 ---
 

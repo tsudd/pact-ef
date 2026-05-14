@@ -29,7 +29,7 @@ Integration Tests                      CI Validation Tests
 
 **`PactEf.Verify`** — referenced by the DB nuget's CI test project. Orchestrates validation against a caller-provided database.
 
-**`pactef-snapshot.json`** — the contract file. Committed to each consumer repo. Main branch is the source of truth.
+**`pactef-snapshots/<ConsumerName>.json`** — the contract file. Committed to each consumer repo. Main branch is the source of truth.
 
 ---
 
@@ -58,7 +58,7 @@ Integration Tests                      CI Validation Tests
 ```
 
 **Key decisions:**
-- `dbSchemaVersion` — timestamp prefix of the latest row in `__EFMigrationsHistory`, read at snapshot write time. Used in failure reports to identify which migration introduced a break.
+- `dbSchemaVersion` — timestamp prefix of the latest row in `__EFMigrationsHistory`, captured lazily on the first intercepted command (not at snapshot write time). Used in failure reports to identify which migration introduced a break.
 - Parameter values are stripped; only DB types are kept. Sufficient for `EXPLAIN` without leaking test data.
 - Queries are deduplicated per test. Same SQL appearing N times → stored once with `executionCount: N`.
 - File is deterministically ordered (tests by class+name, queries by SQL text) for clean git diffs.
@@ -70,14 +70,21 @@ Integration Tests                      CI Validation Tests
 
 ### Registration
 
+Interceptor is registered inside the `AddDbContext` callback — this is the only supported registration point:
+
 ```csharp
-services.AddPactEfCapture(options =>
+services.AddDbContext<MyDbContext>(options =>
 {
-    options.ConsumerName = "OrderService";
-    options.OutputPath = "pactef-snapshot.json"; // relative to test output dir
-    options.DisableEnvVariable = "PACTEF_CAPTURE_DISABLED"; // optional, this is the default
+    options.UseNpgsql(connectionString);
+    options.AddPactEfCapture(capture =>
+    {
+        capture.ConsumerName = "OrderService";
+        capture.DisableEnvVariable = "PACTEF_CAPTURE_DISABLED"; // optional, this is the default
+    });
 });
 ```
+
+Output path is not configurable — it is always `<test-project-root>/pactef-snapshots/<ConsumerName>.json`. The project root is located by walking up from `AppContext.BaseDirectory` until a `.csproj` file is found.
 
 ### Disable via Environment Variable
 
@@ -89,26 +96,42 @@ PACTEF_CAPTURE_DISABLED=true dotnet test  # capture skipped entirely
 
 ### Interception
 
-Registers an `IDbCommandInterceptor` into the EF Core pipeline. Hooks `ReaderExecutingAsync` and `NonQueryExecutingAsync`. For each command:
+Registers an `IDbCommandInterceptor` into the EF Core pipeline. Hooks `ReaderExecutingAsync` and `NonQueryExecutingAsync`. Only **DML commands** are captured — `SELECT`, `INSERT`, `UPDATE`, `DELETE`. DDL statements and EF Core infrastructure queries (e.g. `__EFMigrationsHistory` lookups, `__EFMigrationsLock`) are skipped.
+
+For each captured command:
 - Strips parameter values, records parameter DB types
-- Resolves the current test name (see below)
-- Buffers the entry in-memory, thread-safe
+- Resolves the current test name from `PactEfTestContext.Current` (see below)
+- Buffers the entry into `ConcurrentDictionary<string, ConcurrentBag<QueryEntry>>` keyed by test name
+
+### dbSchemaVersion
+
+Captured lazily on the first intercepted DML command: queries `__EFMigrationsHistory` for the latest `MigrationId` (`SELECT "MigrationId" FROM "__EFMigrationsHistory" ORDER BY "MigrationId" DESC LIMIT 1`) and stores it in memory. Subsequent commands reuse the cached value.
 
 ### Test Name Resolution
 
+`PactEfTestContext.Current` is backed by `AsyncLocal<string>` — safe for parallel test execution.
+
 | Framework | Strategy |
 |-----------|----------|
-| xUnit     | Package provides `[UsePactEfCapture]` attribute (extends `BeforeAfterTestAttribute`) that automatically sets/clears `PactEfTestContext.Current`. Consumer decorates their test class — no manual wiring required. |
+| xUnit     | Package provides `[UsePactEfCapture]` — a **class-level** `BeforeAfterTestAttribute`. Automatically sets/clears `PactEfTestContext.Current` before and after each test method. Consumer decorates their test class — no manual wiring required. |
 | NUnit     | `TestContext.CurrentContext.Test.FullName` |
 | MSTest    | `TestContext.TestName` |
 | Fallback  | `"__unattributed__"` bucket |
 
 ### Snapshot Writing
 
-Triggered once at the end of the full test run (xUnit: assembly fixture `IAsyncLifetime`; NUnit: `[SetUpFixture]`):
-1. Reads `dbSchemaVersion` from `__EFMigrationsHistory` (`SELECT "MigrationId" ORDER BY "MigrationId" DESC LIMIT 1`)
-2. Deduplicates queries per test, sorts deterministically
-3. Writes JSON to `OutputPath`
+Triggered once at the end of the full test run via xUnit's assembly fixture mechanism:
+
+```csharp
+[assembly: AssemblyFixture(typeof(PactEfAssemblyFixture))]
+```
+
+`PactEfAssemblyFixture` implements `IAsyncLifetime`. On `DisposeAsync`:
+1. Uses the already-cached `dbSchemaVersion`
+2. Deduplicates queries per test, sorts deterministically (tests by class+name, queries by SQL text)
+3. Writes JSON to `<test-project-root>/pactef-snapshots/<ConsumerName>.json`
+
+One snapshot file is written per `ConsumerName`. If multiple `DbContext` types are registered with the same `ConsumerName`, their queries are merged into a single file.
 
 ---
 
@@ -137,7 +160,7 @@ The caller is fully responsible for provisioning and migrating the database befo
 | `SnapshotSource.FromFolder(path)` | Reads from the given folder path. Error if path does not exist. |
 | `SnapshotSource.FromEnvVariable(name)` | Reads the env variable at runtime, splits by `;`, treats each entry as a folder path. Silently skipped if the variable is not set. |
 
-Sources are merged; duplicates are deduplicated by `consumerName` (last one wins).
+Sources are merged; when the same `consumerName` appears in both a `FromFolder` and a `FromEnvVariable` source, **`FromEnvVariable` always wins** regardless of declaration order.
 
 **Local monorepo usage** — set the env variable instead of hardcoding paths:
 
@@ -183,7 +206,7 @@ Safe literals per type used when running `EXPLAIN`:
 
 ### Snapshot Discovery
 
-Scans all configured `SnapshotSources` folders recursively for `pactef-snapshot.json` files. Multiple consumers' snapshots can coexist in the same folder. Each file's `consumerName` identifies its owner.
+Scans all configured `SnapshotSources` folders recursively for files matching `pactef-snapshots/*.json`. Multiple consumers' snapshots can coexist in the same folder — each file's `consumerName` field identifies its owner.
 
 ### Failure Reporting
 
@@ -223,7 +246,7 @@ Snapshot is a committed artifact on main. PRs that change queries must include t
   # PACTEF_CAPTURE_DISABLED not set → capture runs
 
 - name: Fail if snapshot is outdated
-  run: git diff --exit-code **/pactef-snapshot.json
+  run: git diff --exit-code **/pactef-snapshots/*.json
   # forces updated snapshot to be included in the PR
 ```
 
@@ -289,7 +312,8 @@ PactEf.sln
         │   └── OrderRepository.cs
         ├── SampleConsumer.Tests/
         │   ├── OrderRepositoryTests.cs
-        │   ├── pactef-snapshot.json       # committed snapshot
+        │   ├── pactef-snapshots/
+        │   │   └── SampleConsumer.json    # committed snapshot
         │   └── SampleConsumer.Tests.csproj
         └── SampleConsumer.csproj         # <IsPackable>false</IsPackable>
 ```
@@ -305,14 +329,14 @@ One-to-many relationship. Sufficient to generate: single fetch by id, filtered l
 ### SampleDb
 
 - References `PactEf.Verify`
-- Contains a verification test that reads the local snapshot from `../SampleConsumer/SampleConsumer.Tests/pactef-snapshot.json`
+- Contains a verification test that reads the local snapshot via `PACTEF_SNAPSHOT_PATHS=../SampleConsumer/SampleConsumer.Tests/pactef-snapshots` or the CI folder path
 - Caller (test fixture) spins up Testcontainers Postgres and applies migrations before calling `VerifyAllAsync`
 
 ### SampleConsumer.Tests
 
 - References `PactEf.Capture` and `SampleDb`
 - Contains 2-3 xUnit integration tests against `OrderRepository`
-- Writes `pactef-snapshot.json` to the test output directory
+- Writes `pactef-snapshots/SampleConsumer.json` to the test project root
 
 ---
 

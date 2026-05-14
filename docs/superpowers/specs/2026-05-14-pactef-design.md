@@ -70,9 +70,28 @@ Integration Tests                      CI Validation Tests
 
 ## PactEf.Capture
 
-### Registration
+### Activation Guard
 
-Interceptor is registered inside the `AddDbContext` callback — this is the only supported registration point:
+Capture is a **no-op unless the environment is explicitly `Testing`**. This prevents accidental snapshot writes in staging or production if the package is referenced outside test projects.
+
+Capture activates only when one of these env variables equals `Testing` (case-insensitive):
+- `ASPNETCORE_ENVIRONMENT`
+- `DOTNET_ENVIRONMENT`
+
+If neither is set to `Testing`, all registration methods (`AddPactEfCapture`, `PactEfCaptureInterceptor.Create`) silently return without registering anything.
+
+`PACTEF_CAPTURE_DISABLED=true` explicitly disables capture even when the environment is `Testing` — useful for CI pipelines that run tests but do not want snapshot updates.
+
+```bash
+ASPNETCORE_ENVIRONMENT=Testing dotnet test        # capture active
+DOTNET_ENVIRONMENT=Testing dotnet test            # capture active
+ASPNETCORE_ENVIRONMENT=Development dotnet test    # capture is no-op
+PACTEF_CAPTURE_DISABLED=true dotnet test          # capture disabled regardless
+```
+
+### Registration — DI path
+
+For projects using `IServiceCollection`, register inside the `AddDbContext` callback:
 
 ```csharp
 services.AddDbContext<MyDbContext>(options =>
@@ -81,20 +100,35 @@ services.AddDbContext<MyDbContext>(options =>
     options.AddPactEfCapture(capture =>
     {
         capture.ConsumerName = "OrderService";
-        capture.DisableEnvVariable = "PACTEF_CAPTURE_DISABLED"; // optional, this is the default
     });
 });
 ```
 
-Output path is not configurable — it is always `<test-project-root>/pactef-snapshots/<ConsumerName>.json`. The project root is located by walking up from `AppContext.BaseDirectory` until a `.csproj` file is found.
+### Registration — Non-DI path
 
-### Disable via Environment Variable
+For projects with a custom `DbContext` factory that builds `DbContextOptions` directly:
 
-If the env variable named by `DisableEnvVariable` is set to `true`, `1`, or `yes`, `AddPactEfCapture` is a complete no-op — no interceptor registered, no file written, no `__EFMigrationsHistory` query. Default variable name: `PACTEF_CAPTURE_DISABLED`.
+```csharp
+// Once in test setup — create a shared interceptor instance
+var interceptor = PactEfCaptureInterceptor.Create(options =>
+{
+    options.ConsumerName = "OrderService";
+});
 
-```bash
-PACTEF_CAPTURE_DISABLED=true dotnet test  # capture skipped entirely
+// In the custom DbContext factory:
+var options = new DbContextOptionsBuilder<MyDbContext>()
+    .UseNpgsql(connectionString)
+    .AddInterceptors(interceptor)
+    .Options;
+
+return new MyDbContext(options);
 ```
+
+The consumer holds the interceptor reference. The assembly fixture (or teardown hook) calls `interceptor.FlushAsync()` to write the snapshot at the end of the test run.
+
+`PactEfCaptureInterceptor.Create` returns a null-object interceptor (no-op) when the environment guard is not satisfied — so non-DI factory code needs no conditional checks.
+
+Output path is not configurable in either registration path — it is always `<test-project-root>/pactef-snapshots/<ConsumerName>.json`. The project root is located by walking up from `AppContext.BaseDirectory` until a `.csproj` file is found.
 
 ### Interception
 
@@ -131,13 +165,21 @@ public class OrderRepositoryTests
 
 ### Snapshot Writing
 
-Triggered once at the end of the full test run via xUnit's assembly fixture mechanism:
+**DI path** — triggered once at the end of the full test run via xUnit's assembly fixture mechanism:
 
 ```csharp
 [assembly: AssemblyFixture(typeof(PactEfAssemblyFixture))]
 ```
 
-`PactEfAssemblyFixture` implements `IAsyncLifetime`. On `DisposeAsync`:
+`PactEfAssemblyFixture` implements `IAsyncLifetime`. On `DisposeAsync` it calls `FlushAsync()` on all registered interceptors.
+
+**Non-DI path** — consumer calls `FlushAsync()` explicitly in their teardown:
+
+```csharp
+await interceptor.FlushAsync();
+```
+
+**Both paths — `FlushAsync` behavior:**
 1. Uses the already-cached `dbSchemaVersion`
 2. Deduplicates queries by SQL text, sorts deterministically by SQL text
 3. Writes JSON to `<test-project-root>/pactef-snapshots/<ConsumerName>.json`

@@ -1,0 +1,123 @@
+using System.Data.Common;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using PactEf.Capture.TestContext;
+using PactEf.Core.Models;
+using PactEf.Core.Serialization;
+
+namespace PactEf.Capture;
+
+public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
+{
+    private static readonly HashSet<string> DmlPrefixes =
+        new(StringComparer.OrdinalIgnoreCase) { "SELECT", "INSERT", "UPDATE", "DELETE" };
+
+    private static readonly HashSet<string> InfraPatterns =
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "__EFMigrationsHistory",
+            "__EFMigrationsLock"
+        };
+
+    private readonly CaptureOptions _options;
+    private readonly QueryBuffer _buffer = new();
+    private readonly SchemaVersionReader _schemaVersionReader = new();
+
+    internal PactEfCaptureInterceptor(CaptureOptions options)
+    {
+        _options = options;
+        CaptureRegistry.Register(this);
+    }
+
+    /// <summary>
+    /// Creates a real interceptor when the environment guard is satisfied,
+    /// otherwise returns a no-op NullCaptureInterceptor.
+    /// </summary>
+    public static DbCommandInterceptor Create(Action<CaptureOptions> configure)
+    {
+        var options = new CaptureOptions { ConsumerName = string.Empty };
+        configure(options);
+
+        if (!EnvironmentGuard.IsActive(options.DisableEnvVariable))
+            return NullCaptureInterceptor.Instance;
+
+        return new PactEfCaptureInterceptor(options);
+    }
+
+    public override async ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<DbDataReader> result,
+        CancellationToken cancellationToken = default)
+    {
+        await CaptureAsync(command);
+        return await base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
+    }
+
+    public override async ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(
+        DbCommand command,
+        CommandEventData eventData,
+        InterceptionResult<int> result,
+        CancellationToken cancellationToken = default)
+    {
+        await CaptureAsync(command);
+        return await base.NonQueryExecutingAsync(command, eventData, result, cancellationToken);
+    }
+
+    private async Task CaptureAsync(DbCommand command)
+    {
+        var sql = command.CommandText;
+
+        if (!IsDml(sql) || IsInfraQuery(sql))
+            return;
+
+        // Lazy schema version capture on first DML command
+        if (command.Connection is not null)
+            await _schemaVersionReader.GetAsync(command.Connection);
+
+        var paramTypes = command.Parameters
+            .Cast<DbParameter>()
+            .Select(p => p.DbType.ToString())
+            .ToList();
+
+        var entry = new QueryEntry
+        {
+            Sql = sql,
+            ParameterTypes = paramTypes,
+            TestName = PactEfTestContext.Current,
+            TestClass = PactEfTestContext.CurrentClass
+        };
+
+        _buffer.Add(entry);
+    }
+
+    private static bool IsDml(string sql)
+    {
+        var trimmed = sql.TrimStart();
+        return DmlPrefixes.Any(p =>
+            trimmed.StartsWith(p, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsInfraQuery(string sql) =>
+        InfraPatterns.Any(p => sql.Contains(p, StringComparison.OrdinalIgnoreCase));
+
+    public async Task FlushAsync()
+    {
+        var projectRoot = ProjectRootLocator.FindProjectRoot(AppContext.BaseDirectory);
+        if (projectRoot is null)
+            throw new InvalidOperationException(
+                "Could not locate project root (.csproj) from AppContext.BaseDirectory.");
+
+        var outputPath = Path.Combine(
+            projectRoot, "pactef-snapshots", $"{_options.ConsumerName}.json");
+
+        var snapshot = new SnapshotFile
+        {
+            ConsumerName = _options.ConsumerName,
+            CapturedAt = DateTimeOffset.UtcNow,
+            DbSchemaVersion = await _schemaVersionReader.GetAsync(null!),
+            Queries = _buffer.GetAll()
+        };
+
+        await SnapshotSerializer.WriteToFileAsync(snapshot, outputPath);
+    }
+}

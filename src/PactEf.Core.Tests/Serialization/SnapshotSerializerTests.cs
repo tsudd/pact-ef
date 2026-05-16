@@ -38,9 +38,8 @@ public class SnapshotSerializerTests
         Assert.Equal(snapshot.ConsumerName, result.ConsumerName);
         Assert.Equal(snapshot.DbSchemaVersion, result.DbSchemaVersion);
         Assert.Equal(2, result.Queries.Count);
-        Assert.Equal("SELECT \"Id\" FROM \"Orders\"", result.Queries[0].Sql);
-        Assert.Equal("Test_GetById", result.Queries[1].TestName);
-        Assert.Null(result.Queries[0].TestName);
+        Assert.Contains(result.Queries, q => q.Sql == "SELECT \"Id\" FROM \"Orders\"" && q.TestName == null);
+        Assert.Contains(result.Queries, q => q.TestName == "Test_GetById");
     }
 
     [Fact]

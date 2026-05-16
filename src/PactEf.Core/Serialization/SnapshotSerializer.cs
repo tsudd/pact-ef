@@ -36,7 +36,8 @@ public static class SnapshotSerializer
 
     public static async Task WriteToFileAsync(SnapshotFile snapshot, string filePath)
     {
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+        var dir = Path.GetDirectoryName(filePath);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
         await File.WriteAllTextAsync(filePath, Serialize(snapshot));
     }
 

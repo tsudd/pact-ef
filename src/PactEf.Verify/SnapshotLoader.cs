@@ -3,7 +3,7 @@ using PactEf.Core.Serialization;
 
 namespace PactEf.Verify;
 
-public sealed class SnapshotLoader(IReadOnlyList<SnapshotSource> sources)
+internal sealed class SnapshotLoader(IReadOnlyList<SnapshotSource> sources)
 {
     public async Task<IReadOnlyList<SnapshotFile>> LoadAllAsync()
     {

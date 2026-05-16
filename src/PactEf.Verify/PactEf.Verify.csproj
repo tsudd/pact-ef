@@ -10,4 +10,9 @@
   <ItemGroup>
     <ProjectReference Include="../PactEf.Core/PactEf.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>PactEf.Verify.Tests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
 </Project>

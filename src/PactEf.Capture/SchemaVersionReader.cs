@@ -5,7 +5,7 @@ namespace PactEf.Capture;
 internal sealed class SchemaVersionReader
 {
     private string? _cached;
-    private bool _read;
+    private volatile bool _read;
     private readonly SemaphoreSlim _lock = new(1, 1);
 
     public async Task<string?> GetAsync(DbConnection connection)
@@ -32,7 +32,9 @@ internal sealed class SchemaVersionReader
         }
         catch
         {
-            // Table may not exist in non-EF databases — return null silently
+            // Table may not exist, or a transient error occurred.
+            // Either way, treat as "no schema version" and cache that result
+            // to avoid repeated failed queries.
             _read = true;
             return null;
         }

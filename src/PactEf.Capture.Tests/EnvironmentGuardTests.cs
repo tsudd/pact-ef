@@ -2,6 +2,7 @@ using PactEf.Capture;
 
 namespace PactEf.Capture.Tests;
 
+[Collection("EnvVarTests")]
 public class EnvironmentGuardTests : IDisposable
 {
     public void Dispose()

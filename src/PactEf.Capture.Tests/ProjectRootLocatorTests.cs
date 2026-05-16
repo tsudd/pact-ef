@@ -19,7 +19,16 @@ public class ProjectRootLocatorTests
     [Fact]
     public void FindProjectRoot_WhenNoCsprojFound_ReturnsNull()
     {
-        var root = ProjectRootLocator.FindProjectRoot(Path.GetTempPath());
-        Assert.Null(root);
+        var emptyDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(emptyDir);
+        try
+        {
+            var root = ProjectRootLocator.FindProjectRoot(emptyDir);
+            Assert.Null(root);
+        }
+        finally
+        {
+            Directory.Delete(emptyDir);
+        }
     }
 }

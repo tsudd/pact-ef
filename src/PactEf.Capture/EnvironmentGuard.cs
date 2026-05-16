@@ -5,7 +5,7 @@ internal static class EnvironmentGuard
     private static readonly string[] EnvironmentVariables =
         ["ASPNETCORE_ENVIRONMENT", "DOTNET_ENVIRONMENT"];
 
-    public static bool IsActive(string disableEnvVariable)
+    internal static bool IsActive(string disableEnvVariable)
     {
         var disableValue = Environment.GetEnvironmentVariable(disableEnvVariable);
         if (disableValue is "true" or "1" or "yes")

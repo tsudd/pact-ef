@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace PactEf.Capture;
 
@@ -8,12 +9,7 @@ public static class DbContextOptionsBuilderExtensions
         this DbContextOptionsBuilder builder,
         Action<CaptureOptions> configure)
     {
-        var options = new CaptureOptions { ConsumerName = string.Empty };
-        configure(options);
-
-        if (!EnvironmentGuard.IsActive(options.DisableEnvVariable))
-            return builder;
-
-        return builder.AddInterceptors(new PactEfCaptureInterceptor(options));
+        var interceptor = PactEfCaptureInterceptor.Create(configure);
+        return builder.AddInterceptors(interceptor);
     }
 }

@@ -21,6 +21,7 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
     private readonly CaptureOptions _options;
     private readonly QueryBuffer _buffer = new();
     private readonly SchemaVersionReader _schemaVersionReader = new();
+    private DbConnection? _lastConnection;
 
     internal PactEfCaptureInterceptor(CaptureOptions options)
     {
@@ -72,7 +73,10 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
 
         // Lazy schema version capture on first DML command
         if (command.Connection is not null)
+        {
+            _lastConnection = command.Connection;
             await _schemaVersionReader.GetAsync(command.Connection);
+        }
 
         var paramTypes = command.Parameters
             .Cast<DbParameter>()
@@ -114,7 +118,9 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
         {
             ConsumerName = _options.ConsumerName,
             CapturedAt = DateTimeOffset.UtcNow,
-            DbSchemaVersion = await _schemaVersionReader.GetAsync(null!),
+            DbSchemaVersion = _lastConnection is not null
+                ? await _schemaVersionReader.GetAsync(_lastConnection)
+                : null,
             Queries = _buffer.GetAll()
         };
 

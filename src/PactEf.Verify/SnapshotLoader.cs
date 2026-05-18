@@ -31,7 +31,7 @@ internal sealed class SnapshotLoader(IReadOnlyList<SnapshotSource> sources)
         foreach (var path in paths)
         {
             if (!Directory.Exists(path))
-                throw new DirectoryNotFoundException($"Snapshot source directory not found: {path}");
+                continue; // Skip non-existent paths (expected for CI-specific paths in local dev)
 
             var files = Directory.GetFiles(path, "*.json", SearchOption.AllDirectories);
             foreach (var file in files)

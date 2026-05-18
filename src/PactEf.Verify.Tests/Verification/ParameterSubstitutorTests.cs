@@ -32,6 +32,24 @@ public class ParameterSubstitutorTests
     }
 
     [Fact]
+    public void Substitute_ReplacesNpgsqlNamedPlaceholders()
+    {
+        var sql = "SELECT o.\"Id\", o.\"Status\" FROM \"Orders\" AS o WHERE o.\"Id\" = @__id_0 LIMIT 1";
+        var types = new[] { "Int32" };
+        var result = ParameterSubstitutor.Substitute(sql, types);
+        Assert.Equal("SELECT o.\"Id\", o.\"Status\" FROM \"Orders\" AS o WHERE o.\"Id\" = 0 LIMIT 1", result);
+    }
+
+    [Fact]
+    public void Substitute_ReplacesNpgsqlInsertPlaceholders()
+    {
+        var sql = "INSERT INTO \"Orders\" (\"CreatedAt\", \"Status\")\nVALUES (@p0, @p1)\nRETURNING \"Id\";\n";
+        var types = new[] { "DateTime", "String" };
+        var result = ParameterSubstitutor.Substitute(sql, types);
+        Assert.Equal("INSERT INTO \"Orders\" (\"CreatedAt\", \"Status\")\nVALUES ('2000-01-01', '')\nRETURNING \"Id\";\n", result);
+    }
+
+    [Fact]
     public void Substitute_NoParameters_ReturnsSqlUnchanged()
     {
         var sql = "SELECT * FROM \"Orders\"";

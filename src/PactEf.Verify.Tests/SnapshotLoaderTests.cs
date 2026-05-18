@@ -1,6 +1,5 @@
 using PactEf.Core.Models;
 using PactEf.Core.Serialization;
-using PactEf.Verify;
 
 namespace PactEf.Verify.Tests;
 
@@ -28,9 +27,14 @@ public class SnapshotLoaderTests : IDisposable
     [Fact]
     public async Task Load_FindsSnapshotFilesInSubfolders()
     {
+        // Arrange
         await WriteSnapshot("OrderService");
         var loader = new SnapshotLoader([SnapshotSource.FromFolder(_tempDir)]);
+
+        // Act
         var snapshots = await loader.LoadAllAsync();
+
+        // Assert
         Assert.Single(snapshots);
         Assert.Equal("OrderService", snapshots[0].ConsumerName);
     }
@@ -38,7 +42,7 @@ public class SnapshotLoaderTests : IDisposable
     [Fact]
     public async Task Load_EnvVariableWins_OverFolder_ForSameConsumer()
     {
-        // Two folders, each with a snapshot for the same consumer
+        // Arrange
         var dir1 = Path.Combine(_tempDir, "ci");
         var dir2 = Path.Combine(_tempDir, "local");
         Directory.CreateDirectory(Path.Combine(dir1, "pactef-snapshots"));
@@ -73,8 +77,11 @@ public class SnapshotLoaderTests : IDisposable
                 SnapshotSource.FromEnvVariable("TEST_PATHS")
             };
             var loader = new SnapshotLoader(sources);
+
+            // Act
             var snapshots = await loader.LoadAllAsync();
 
+            // Assert
             Assert.Single(snapshots);
             Assert.Equal("local-version", snapshots[0].DbSchemaVersion);
         }

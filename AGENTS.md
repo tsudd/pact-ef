@@ -6,32 +6,21 @@ This file provides context for AI agents and automated tooling working on this r
 
 PactEf is a consumer-driven contract testing library for EF Core database schemas. It intercepts the SQL that consumer integration tests execute, saves it as a JSON snapshot, and later replays those queries via `EXPLAIN` against a fresh database after migrations run. Breaking schema changes (renamed columns, dropped tables, type changes) are caught before they ship.
 
-## Technology Stack
-
-- .NET 10, C# 13
-- EF Core 9 (DbCommandInterceptor)
-- Npgsql 9 / PostgreSQL
-- xUnit v2 + `Xunit.Extensions.AssemblyFixture` 2.6.0
-- Testcontainers.PostgreSql (samples only)
-- System.Text.Json
-- dotnet binary: `/home/alex/.dotnet/dotnet` (add `/home/alex/.dotnet` to PATH)
-
 ## Repository Layout
 
-```
-PactEf/                      Solution root
-  PactEf.sln
-  src/
-    PactEf.Core/             QueryEntry, SnapshotFile, SnapshotSerializer
-    PactEf.Core.Tests/
-    PactEf.Capture/          Interceptor, fixtures, DI extensions
-    PactEf.Capture.Tests/
-    PactEf.Verify/           Loader, verifier, failure report
-    PactEf.Verify.Tests/
-  samples/
-    SampleDb/                EF Core model + migrations + SchemaVerificationTests
-    SampleConsumer/          OrderRepository
-    SampleConsumer.Tests/    Capture integration tests + snapshot JSON
+```markdown
+PactEf.sln
+src/
+  PactEf.Core/             QueryEntry, SnapshotFile, SnapshotSerializer
+  PactEf.Core.Tests/
+  PactEf.Capture/          Interceptor, fixtures, DI extensions
+  PactEf.Capture.Tests/
+  PactEf.Verify/           Loader, verifier, failure report
+  PactEf.Verify.Tests/
+samples/
+  SampleDb/                EF Core model + migrations + SchemaVerificationTests
+  SampleConsumer/          OrderRepository
+  SampleConsumer.Tests/    Capture integration tests + snapshot JSON
 ```
 
 ## Key Types
@@ -83,8 +72,6 @@ PactEf/                      Solution root
 ## Test Commands
 
 ```bash
-export PATH="$PATH:/home/alex/.dotnet"
-
 # Unit tests (no Docker)
 dotnet test src/PactEf.Core.Tests/PactEf.Core.Tests.csproj
 dotnet test src/PactEf.Capture.Tests/PactEf.Capture.Tests.csproj
@@ -118,24 +105,3 @@ Written to `<test-project-dir>/pactef-snapshots/<ConsumerName>.json`.
   ]
 }
 ```
-
-## Verification Error Codes Detected
-
-PostgreSQL error codes that indicate a schema-breaking change:
-
-| Code | Meaning |
-|---|---|
-| `42P01` | undefined_table |
-| `42703` | undefined_column |
-| `42883` | undefined_function |
-| `42804` | datatype_mismatch |
-| `42601` | syntax_error |
-
-## Current State
-
-- All 45 unit tests pass
-- End-to-end smoke test complete:
-  - `20260514000001_RenameStatusColumn` (Status → State) causes verification failure with `42703`
-  - Without the migration, verification passes
-- `git` HEAD: `f57b704` on `master`
-- No NuGet packages published yet — this is a pre-release implementation

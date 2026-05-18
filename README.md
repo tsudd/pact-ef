@@ -55,8 +55,9 @@ public class MyTests : IAssemblyFixture<PactEfAssemblyFixture>
 
 Set the environment variable so capture activates:
 
-```
-ASPNETCORE_ENVIRONMENT=Testing
+```bash
+export DOTNET_ENVIRONMENT=Testing
+# or ASPNETCORE_ENVIRONMENT=Testing
 ```
 
 Snapshots are written to `pactef-snapshots/<ConsumerName>.json` next to the test project.

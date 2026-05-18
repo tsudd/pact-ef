@@ -8,6 +8,7 @@ public class SnapshotSerializerTests
     [Fact]
     public void Serialize_ThenDeserialize_RoundTrips()
     {
+        // Arrange
         var snapshot = new SnapshotFile
         {
             ConsumerName = "TestConsumer",
@@ -32,9 +33,11 @@ public class SnapshotSerializerTests
             ]
         };
 
+        // Act
         var json = SnapshotSerializer.Serialize(snapshot);
         var result = SnapshotSerializer.Deserialize(json);
 
+        // Assert
         Assert.Equal(snapshot.ConsumerName, result.ConsumerName);
         Assert.Equal(snapshot.DbSchemaVersion, result.DbSchemaVersion);
         Assert.Equal(2, result.Queries.Count);
@@ -45,6 +48,7 @@ public class SnapshotSerializerTests
     [Fact]
     public void Serialize_OrdersQueriesBySqlText()
     {
+        // Arrange
         var snapshot = new SnapshotFile
         {
             ConsumerName = "TestConsumer",
@@ -56,9 +60,11 @@ public class SnapshotSerializerTests
             ]
         };
 
+        // Act
         var json = SnapshotSerializer.Serialize(snapshot);
         var result = SnapshotSerializer.Deserialize(json);
 
+        // Assert
         Assert.Equal("SELECT \"A\"", result.Queries[0].Sql);
         Assert.Equal("SELECT \"Z\"", result.Queries[1].Sql);
     }

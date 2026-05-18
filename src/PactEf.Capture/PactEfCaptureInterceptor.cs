@@ -1,6 +1,7 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using PactEf.Capture.TestContext;
+using PactEf.Capture.Utilities;
 using PactEf.Core.Models;
 using PactEf.Core.Serialization;
 

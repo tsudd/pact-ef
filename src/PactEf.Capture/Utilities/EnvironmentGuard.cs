@@ -1,4 +1,4 @@
-namespace PactEf.Capture;
+namespace PactEf.Capture.Utilities;
 
 internal static class EnvironmentGuard
 {

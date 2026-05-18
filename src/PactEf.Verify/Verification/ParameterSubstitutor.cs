@@ -1,6 +1,6 @@
 namespace PactEf.Verify.Verification;
 
-internal static class ParameterSubstitutor
+internal static partial class ParameterSubstitutor
 {
     private static readonly Dictionary<string, string> Literals =
         new(StringComparer.OrdinalIgnoreCase)
@@ -22,11 +22,11 @@ internal static class ParameterSubstitutor
             ["Double"] = "0.0",
             ["Single"] = "0.0",
             ["Currency"] = "0.0",
-            ["VarNumeric"] = "0.0",
+            ["VarNumeric"] = "0.0"
         };
 
     public static string GetLiteral(string dbType) =>
-        Literals.TryGetValue(dbType, out var lit) ? lit : "null";
+        Literals.GetValueOrDefault(dbType, "null");
 
     public static string Substitute(string sql, IReadOnlyList<string> parameterTypes)
     {
@@ -58,7 +58,7 @@ internal static class ParameterSubstitutor
     private static string SubstituteNamedParams(string sql, IReadOnlyList<string> parameterTypes)
     {
         var index = 0;
-        return NamedParamRegex.Replace(sql, match =>
+        return NamedParamRegex.Replace(sql, _ =>
         {
             if (index < parameterTypes.Count)
                 return GetLiteral(parameterTypes[index++]);

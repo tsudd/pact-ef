@@ -1,5 +1,3 @@
-using PactEf.Core.Models;
-
 namespace PactEf.Verify.Verification;
 
 public interface IQueryVerifier

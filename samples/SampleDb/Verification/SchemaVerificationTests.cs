@@ -28,9 +28,12 @@ public sealed class SchemaVerificationTests : IAsyncLifetime
     [Trait("Category", "PactEfVerification")]
     public async Task AllConsumerSnapshots_AreCompatibleWithCurrentSchema()
     {
+        // Arrange
         // CI: FromFolder points to checked-out consumer repos (absolute or relative to CWD)
         // Local monorepo: set PACTEF_SNAPSHOT_PATHS to an absolute path, e.g.:
         //   export PACTEF_SNAPSHOT_PATHS=/path/to/repo/samples/SampleConsumer.Tests/pactef-snapshots
+
+        // Act & Assert
         await PactEfVerifier.VerifyAllAsync(options =>
         {
             options.SnapshotSources =

@@ -1,4 +1,5 @@
 using PactEf.Capture;
+using PactEf.Capture.Utilities;
 
 namespace PactEf.Capture.Tests;
 

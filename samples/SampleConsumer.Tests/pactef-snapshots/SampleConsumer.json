@@ -1,11 +1,11 @@
 {
   "schemaVersion": "1.0",
   "consumerName": "SampleConsumer",
-  "capturedAt": "2026-05-18T16:42:30.9893104+00:00",
+  "capturedAt": "2026-05-18T17:46:41.0397+00:00",
   "dbSchemaVersion": "20260514000000_InitialCreate",
   "queries": [
     {
-      "sql": "INSERT INTO \u0022OrderItems\u0022 (\u0022OrderId\u0022, \u0022ProductName\u0022, \u0022Quantity\u0022)\nVALUES (@p2, @p3, @p4)\nRETURNING \u0022Id\u0022;\n",
+      "sql": "INSERT INTO \u0022OrderItems\u0022 (\u0022OrderId\u0022, \u0022ProductName\u0022, \u0022Quantity\u0022)\r\nVALUES (@p2, @p3, @p4)\r\nRETURNING \u0022Id\u0022;\r\n",
       "parameterTypes": [
         "Int32",
         "String",
@@ -14,7 +14,7 @@
       "executionCount": 1
     },
     {
-      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\nVALUES (@p0, @p1)\nRETURNING \u0022Id\u0022;\n",
+      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\r\nVALUES (@p0, @p1)\r\nRETURNING \u0022Id\u0022;\r\n",
       "parameterTypes": [
         "DateTime",
         "String"
@@ -22,7 +22,7 @@
       "executionCount": 2
     },
     {
-      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\nVALUES (@p0, @p1)\nRETURNING \u0022Id\u0022;\nINSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\nVALUES (@p2, @p3)\nRETURNING \u0022Id\u0022;\n",
+      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\r\nVALUES (@p0, @p1)\r\nRETURNING \u0022Id\u0022;\r\nINSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\r\nVALUES (@p2, @p3)\r\nRETURNING \u0022Id\u0022;\r\n",
       "parameterTypes": [
         "DateTime",
         "String",
@@ -32,21 +32,21 @@
       "executionCount": 1
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\nFROM \u0022Orders\u0022 AS o\nWHERE o.\u0022Id\u0022 = @__id_0\nLIMIT 1",
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nWHERE o.\u0022Id\u0022 = @__id_0\r\nLIMIT 1",
       "parameterTypes": [
         "Int32"
       ],
       "executionCount": 1
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\nFROM \u0022Orders\u0022 AS o\nWHERE o.\u0022Status\u0022 = @__status_0",
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nWHERE o.\u0022Status\u0022 = @__status_0",
       "parameterTypes": [
         "String"
       ],
       "executionCount": 1
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022, o0.\u0022Id\u0022, o0.\u0022OrderId\u0022, o0.\u0022ProductName\u0022, o0.\u0022Quantity\u0022\nFROM \u0022Orders\u0022 AS o\nLEFT JOIN \u0022OrderItems\u0022 AS o0 ON o.\u0022Id\u0022 = o0.\u0022OrderId\u0022\nORDER BY o.\u0022Id\u0022",
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022, o0.\u0022Id\u0022, o0.\u0022OrderId\u0022, o0.\u0022ProductName\u0022, o0.\u0022Quantity\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nLEFT JOIN \u0022OrderItems\u0022 AS o0 ON o.\u0022Id\u0022 = o0.\u0022OrderId\u0022\r\nORDER BY o.\u0022Id\u0022",
       "parameterTypes": [],
       "executionCount": 1
     }

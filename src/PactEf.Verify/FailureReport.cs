@@ -13,6 +13,8 @@ public sealed record QueryFailure(
 
 public static class FailureReport
 {
+    private const int ShortenedSqlLength = 80;
+
     public static string Format(IReadOnlyList<QueryFailure> failures)
     {
         var sb = new StringBuilder();
@@ -24,8 +26,8 @@ public static class FailureReport
                 if (failure.TestName is not null)
                     sb.AppendLine($"  [{failure.TestName}]");
 
-                var shortSql = failure.Sql.Length > 80
-                    ? failure.Sql[..80] + "..."
+                var shortSql = failure.Sql.Length > ShortenedSqlLength
+                    ? failure.Sql[..ShortenedSqlLength] + "..."
                     : failure.Sql;
                 sb.AppendLine($"    {shortSql}");
                 sb.AppendLine($"    ERROR: {failure.ErrorMessage}" +

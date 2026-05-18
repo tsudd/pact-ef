@@ -1,6 +1,3 @@
-using PactEf.Verify;
-using PactEf.Verify.Verification;
-
 namespace PactEf.Verify.Tests;
 
 public class FailureReportTests
@@ -8,6 +5,7 @@ public class FailureReportTests
     [Fact]
     public void Format_WithTestName_IncludesTestName()
     {
+        // Arrange
         var failures = new List<QueryFailure>
         {
             new(
@@ -20,7 +18,10 @@ public class FailureReportTests
                 CurrentSchemaVersion: "20260514091200")
         };
 
+        // Act
         var report = FailureReport.Format(failures);
+
+        // Assert
         Assert.Contains("OrderService", report);
         Assert.Contains("Test_GetById", report);
         Assert.Contains("column does not exist", report);
@@ -32,6 +33,7 @@ public class FailureReportTests
     [Fact]
     public void Format_WithoutTestName_OmitsTestNameLine()
     {
+        // Arrange
         var failures = new List<QueryFailure>
         {
             new(
@@ -44,7 +46,10 @@ public class FailureReportTests
                 CurrentSchemaVersion: null)
         };
 
+        // Act
         var report = FailureReport.Format(failures);
+
+        // Assert
         Assert.Contains("OrderService", report);
         Assert.DoesNotContain("[", report); // no [TestName] bracket
     }

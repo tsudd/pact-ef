@@ -1,4 +1,5 @@
 using PactEf.Capture;
+using PactEf.Capture.Utilities;
 
 namespace PactEf.Capture.Tests;
 
@@ -15,42 +16,76 @@ public class EnvironmentGuardTests : IDisposable
     [Fact]
     public void IsActive_WhenAspNetCoreEnvironmentIsTesting_ReturnsTrue()
     {
+        // Arrange
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
-        Assert.True(EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED"));
+
+        // Act
+        var result = EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED");
+
+        // Assert
+        Assert.True(result);
     }
 
     [Fact]
     public void IsActive_WhenDotNetEnvironmentIsTesting_ReturnsTrue()
     {
+        // Arrange
         Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Testing");
-        Assert.True(EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED"));
+
+        // Act
+        var result = EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED");
+
+        // Assert
+        Assert.True(result);
     }
 
     [Fact]
     public void IsActive_WhenEnvironmentIsDevelopment_ReturnsFalse()
     {
+        // Arrange
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
-        Assert.False(EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED"));
+
+        // Act
+        var result = EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED");
+
+        // Assert
+        Assert.False(result);
     }
 
     [Fact]
     public void IsActive_WhenNoEnvironmentSet_ReturnsFalse()
     {
-        Assert.False(EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED"));
+        // Act
+        var result = EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED");
+
+        // Assert
+        Assert.False(result);
     }
 
     [Fact]
     public void IsActive_WhenDisableVarIsTrue_ReturnsFalse()
     {
+        // Arrange
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
         Environment.SetEnvironmentVariable("PACTEF_CAPTURE_DISABLED", "true");
-        Assert.False(EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED"));
+
+        // Act
+        var result = EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED");
+
+        // Assert
+        Assert.False(result);
     }
 
     [Fact]
     public void IsActive_CaseInsensitiveEnvironmentValue()
     {
+        // Arrange
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "testing");
-        Assert.True(EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED"));
+
+        // Act
+        var result = EnvironmentGuard.IsActive("PACTEF_CAPTURE_DISABLED");
+
+        // Assert
+        Assert.True(result);
     }
 }

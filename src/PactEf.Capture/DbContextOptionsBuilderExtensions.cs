@@ -12,4 +12,14 @@ public static class DbContextOptionsBuilderExtensions
         var interceptor = PactEfCaptureInterceptor.Create(configure);
         return builder.AddInterceptors(interceptor);
     }
+
+    public static DbContextOptionsBuilder<TContext> AddPactEfCapture<TContext>(
+        this DbContextOptionsBuilder<TContext> builder,
+        Action<CaptureOptions> configure)
+        where TContext : DbContext
+    {
+        var interceptor = PactEfCaptureInterceptor.Create(configure);
+        builder.AddInterceptors(interceptor);
+        return builder;
+    }
 }

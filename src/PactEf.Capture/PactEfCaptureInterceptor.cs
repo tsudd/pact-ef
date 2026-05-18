@@ -29,6 +29,8 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
         CaptureRegistry.Register(this);
     }
 
+    internal string ConsumerName => _options.ConsumerName;
+
     /// <summary>
     /// Creates a real interceptor when the environment guard is satisfied,
     /// otherwise returns a no-op NullCaptureInterceptor.
@@ -104,7 +106,16 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
     private static bool IsInfraQuery(string sql) =>
         InfraPatterns.Any(p => sql.Contains(p, StringComparison.OrdinalIgnoreCase));
 
-    public async Task FlushAsync()
+    /// <summary>
+    /// Flushes this interceptor's buffer alone to a snapshot file.
+    /// </summary>
+    public Task FlushAsync() => FlushMergedAsync([this]);
+
+    /// <summary>
+    /// Merges buffers from all provided interceptors (same consumer) into one snapshot file.
+    /// Uses the first interceptor with a known connection for schema version detection.
+    /// </summary>
+    internal async Task FlushMergedAsync(IReadOnlyList<PactEfCaptureInterceptor> all)
     {
         var projectRoot = ProjectRootLocator.FindProjectRoot(AppContext.BaseDirectory);
         if (projectRoot is null)
@@ -114,14 +125,26 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
         var outputPath = Path.Combine(
             projectRoot, "pactef-snapshots", $"{_options.ConsumerName}.json");
 
+        // Merge all queries from all interceptors for this consumer
+        var mergedBuffer = new QueryBuffer();
+        foreach (var interceptor in all)
+        {
+            foreach (var entry in interceptor._buffer.GetAll())
+                mergedBuffer.Add(entry);
+        }
+
+        // Use the first interceptor that has a connection for schema version
+        var connectionSource = all.FirstOrDefault(i => i._lastConnection is not null);
+        string? schemaVersion = connectionSource is not null
+            ? await connectionSource._schemaVersionReader.GetAsync(connectionSource._lastConnection!)
+            : null;
+
         var snapshot = new SnapshotFile
         {
             ConsumerName = _options.ConsumerName,
             CapturedAt = DateTimeOffset.UtcNow,
-            DbSchemaVersion = _lastConnection is not null
-                ? await _schemaVersionReader.GetAsync(_lastConnection)
-                : null,
-            Queries = _buffer.GetAll()
+            DbSchemaVersion = schemaVersion,
+            Queries = mergedBuffer.GetAll()
         };
 
         await SnapshotSerializer.WriteToFileAsync(snapshot, outputPath);

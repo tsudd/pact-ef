@@ -1,6 +1,4 @@
-# PactEf — Agent Context
-
-This file provides context for AI agents and automated tooling working on this repository.
+# PactEf
 
 ## What This Project Is
 

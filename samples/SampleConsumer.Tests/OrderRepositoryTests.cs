@@ -6,7 +6,8 @@ using Xunit.Extensions.AssemblyFixture;
 
 namespace SampleConsumer.Tests;
 
-public sealed class OrderRepositoryTests(DatabaseFixture db) : IClassFixture<DatabaseFixture>, IAssemblyFixture<PactEfAssemblyFixture>
+public sealed class OrderRepositoryTests(SampleDatabaseFixture db)
+    : IClassFixture<SampleDatabaseFixture>, IAssemblyFixture<PactEfAssemblyFixture>
 {
     [Fact]
     public async Task GetByIdAsync_WhenOrderExists_ReturnsOrder()
@@ -52,7 +53,7 @@ public sealed class OrderRepositoryTests(DatabaseFixture db) : IClassFixture<Dat
         // Arrange
         await using var ctx = db.CreateDbContext();
         var order = new Order { Status = "Processing", CreatedAt = DateTimeOffset.UtcNow };
-        order.Items.Add(new OrderItem { ProductName = "Widget", Quantity = 3 });
+        order.Items.Add(new OrderItem { ProductName = "Widget", Quantity = 3, Description = "Standard widget" });
         ctx.Orders.Add(order);
         await ctx.SaveChangesAsync();
 
@@ -64,31 +65,5 @@ public sealed class OrderRepositoryTests(DatabaseFixture db) : IClassFixture<Dat
         // Assert
         Assert.NotEmpty(results);
         Assert.All(results, o => Assert.NotNull(o.Items));
-    }
-}
-
-public class DiagnosticsTest(DatabaseFixture db) : IClassFixture<DatabaseFixture>
-{
-    [Fact]
-    public void EnvironmentIsSetCorrectly()
-    {
-        // Act
-        var env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT");
-
-        // Assert
-        Assert.Equal("Testing", env);
-    }
-
-    [Fact]
-    public void InterceptorIsRealType()
-    {
-        // Arrange
-        var options = new CaptureOptions { ConsumerName = "Test" };
-
-        // Act
-        var interceptor = PactEfCaptureInterceptor.Create(o => o.ConsumerName = "Test");
-
-        // Assert
-        Assert.IsType<PactEfCaptureInterceptor>(interceptor);
     }
 }

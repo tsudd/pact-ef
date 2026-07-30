@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using PactEf.Verify;
 using PactEf.Verify.Verification;
-using SampleDb;
 using Testcontainers.PostgreSql;
 
 namespace SampleDb.Verification;
@@ -38,12 +37,40 @@ public sealed class SchemaVerificationTests : IAsyncLifetime
         {
             options.SnapshotSources =
             [
-                SnapshotSource.FromFolder("consumers/sample-consumer"),  // CI path (skipped if not present)
+                SnapshotSource.FromFolder("consumers/sample-consumer"), // CI path (skipped if not present)
                 SnapshotSource.FromEnvVariable("PACTEF_SNAPSHOT_PATHS"), // local override
             ];
             options.ConnectionString = _container.GetConnectionString();
             options.Provider = DbProvider.PostgreSql;
             options.DefaultMode = VerificationMode.Explain;
         });
+    }
+
+    [Fact]
+    [Trait("Category", "PactEfVerification")]
+    public async Task BrokenConsumer_ShouldFailWithBreakingMigration()
+    {
+        // Act & Assert
+        try
+        {
+            await PactEfVerifier.VerifyAllAsync(options =>
+            {
+                options.SnapshotSources =
+                [
+                    SnapshotSource.FromEnvVariable("CUSTOM_SNAPSHOT_PATHS") // Custom variable with the broken consumer snapshots
+                ];
+                options.ConnectionString = _container.GetConnectionString();
+                options.Provider = DbProvider.PostgreSql;
+                options.DefaultMode = VerificationMode.Explain;
+            });
+        }
+        catch (PactEfVerificationException ex)
+        {
+            // Assert
+            Assert.Contains("FAILED", ex.Message);
+            return;
+        }
+        
+        Assert.Fail();
     }
 }

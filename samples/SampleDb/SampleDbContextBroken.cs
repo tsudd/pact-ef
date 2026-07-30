@@ -4,7 +4,7 @@ using SampleDb.Entities;
 
 namespace SampleDb;
 
-public class SampleDbContext(DbContextOptions<SampleDbContext> options)
+public sealed class SampleDbContextBroken(DbContextOptions<SampleDbContextBroken> options)
     : DbContext(options)
 {
     public DbSet<Order> Orders => Set<Order>();
@@ -17,27 +17,27 @@ public class SampleDbContext(DbContextOptions<SampleDbContext> options)
             e.HasKey(o => o.Id);
             e.Property(o => o.Status).IsRequired().HasMaxLength(50);
             e.HasMany(o => o.Items)
-             .WithOne(i => i.Order)
-             .HasForeignKey(i => i.OrderId);
+                .WithOne(i => i.Order)
+                .HasForeignKey(i => i.OrderId);
         });
 
         modelBuilder.Entity<OrderItem>(e =>
         {
             e.HasKey(i => i.Id);
             e.Property(i => i.ProductName).IsRequired().HasMaxLength(200);
-            e.Property(i => i.Description).IsRequired().HasMaxLength(1000);
+            e.Property(i => i.Description).HasMaxLength(1000);
         });
     }
 }
 
-public sealed class SampleDbContextFactory : IDesignTimeDbContextFactory<SampleDbContext>
+public sealed class SampleDbContextBrokenFactory : IDesignTimeDbContextFactory<SampleDbContextBroken>
 {
-    public SampleDbContext CreateDbContext(string[] args)
+    public SampleDbContextBroken CreateDbContext(string[] args)
     {
-        var options = new DbContextOptionsBuilder<SampleDbContext>()
+        var options = new DbContextOptionsBuilder<SampleDbContextBroken>()
             .UseNpgsql("connectionString")
             .Options;
 
-        return new SampleDbContext(options);
+        return new SampleDbContextBroken(options);
     }
 }

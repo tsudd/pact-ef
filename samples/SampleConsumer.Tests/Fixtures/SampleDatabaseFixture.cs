@@ -5,7 +5,7 @@ using Testcontainers.PostgreSql;
 
 namespace SampleConsumer.Tests.Fixtures;
 
-public sealed class DatabaseFixture : IAsyncLifetime
+public sealed class SampleDatabaseFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _container = new PostgreSqlBuilder().Build();
 

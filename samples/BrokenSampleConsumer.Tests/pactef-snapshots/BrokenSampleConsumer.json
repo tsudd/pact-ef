@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "0",
+  "consumerName": "BrokenSampleConsumer",
+  "capturedAt": "2026-07-30T19:56:50.9406248+00:00",
+  "dbSchemaVersion": "20260730192039_LatestStateOfBrokenConsumer",
+  "queries": [
+    {
+      "sql": "INSERT INTO \u0022OrderItems\u0022 (\u0022Description\u0022, \u0022OrderId\u0022, \u0022ProductName\u0022, \u0022Quantity\u0022)\r\nVALUES (@p0, @p1, @p2, @p3)\r\nRETURNING \u0022Id\u0022;\r\n",
+      "parameterTypes": [
+        "String",
+        "Int32",
+        "String",
+        "Int32"
+      ],
+      "executionCount": 3
+    },
+    {
+      "sql": "INSERT INTO \u0022OrderItems\u0022 (\u0022Description\u0022, \u0022OrderId\u0022, \u0022ProductName\u0022, \u0022Quantity\u0022)\r\nVALUES (@p2, @p3, @p4, @p5)\r\nRETURNING \u0022Id\u0022;\r\n",
+      "parameterTypes": [
+        "String",
+        "Int32",
+        "String",
+        "Int32"
+      ],
+      "executionCount": 1
+    },
+    {
+      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\r\nVALUES (@p0, @p1)\r\nRETURNING \u0022Id\u0022;\r\n",
+      "parameterTypes": [
+        "DateTime",
+        "String"
+      ],
+      "executionCount": 1
+    },
+    {
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nLIMIT 1",
+      "parameterTypes": [],
+      "executionCount": 3
+    },
+    {
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022Description\u0022, o.\u0022OrderId\u0022, o.\u0022ProductName\u0022, o.\u0022Quantity\u0022\r\nFROM \u0022OrderItems\u0022 AS o\r\nWHERE o.\u0022OrderId\u0022 = @__order_Id_0 AND o.\u0022ProductName\u0022 = \u0027Widget\u0027 AND o.\u0022Quantity\u0022 = 2\r\nLIMIT 2",
+      "parameterTypes": [
+        "Int32"
+      ],
+      "executionCount": 1
+    },
+    {
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022Description\u0022, o.\u0022OrderId\u0022, o.\u0022ProductName\u0022, o.\u0022Quantity\u0022\r\nFROM \u0022OrderItems\u0022 AS o\r\nWHERE o.\u0022OrderId\u0022 = @__order_Id_0 AND o.\u0022ProductName\u0022 = @__8__locals1_productName_1 AND o.\u0022Description\u0022 = @__8__locals1_description_2 AND o.\u0022Quantity\u0022 = @__8__locals1_quantity_3\r\nLIMIT 2",
+      "parameterTypes": [
+        "Int32",
+        "String",
+        "String",
+        "Int32"
+      ],
+      "executionCount": 2
+    },
+    {
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022Description\u0022, o.\u0022OrderId\u0022, o.\u0022ProductName\u0022, o.\u0022Quantity\u0022\r\nFROM \u0022OrderItems\u0022 AS o\r\nWHERE o.\u0022OrderId\u0022 = @__order_Id_0 AND o.\u0022ProductName\u0022 = @__8__locals1_productName_1 AND o.\u0022Description\u0022 IS NULL AND o.\u0022Quantity\u0022 = @__8__locals1_quantity_3\r\nLIMIT 2",
+      "parameterTypes": [
+        "Int32",
+        "String",
+        "Int32"
+      ],
+      "executionCount": 1
+    },
+    {
+      "sql": "SELECT o1.\u0022Id\u0022, o1.\u0022CreatedAt\u0022, o1.\u0022Status\u0022, o0.\u0022Id\u0022, o0.\u0022Description\u0022, o0.\u0022OrderId\u0022, o0.\u0022ProductName\u0022, o0.\u0022Quantity\u0022\r\nFROM (\r\n    SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\r\n    FROM \u0022Orders\u0022 AS o\r\n    LIMIT 1\r\n) AS o1\r\nLEFT JOIN \u0022OrderItems\u0022 AS o0 ON o1.\u0022Id\u0022 = o0.\u0022OrderId\u0022\r\nORDER BY o1.\u0022Id\u0022",
+      "parameterTypes": [],
+      "executionCount": 1
+    },
+    {
+      "sql": "UPDATE \u0022OrderItems\u0022 SET \u0022Description\u0022 = @p0\r\nWHERE \u0022Id\u0022 = @p1;\r\n",
+      "parameterTypes": [
+        "Int32",
+        "String"
+      ],
+      "executionCount": 1
+    }
+  ]
+}

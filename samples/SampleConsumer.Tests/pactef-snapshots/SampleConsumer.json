@@ -1,12 +1,13 @@
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "0",
   "consumerName": "SampleConsumer",
-  "capturedAt": "2026-05-18T17:46:41.0397+00:00",
-  "dbSchemaVersion": "20260514000000_InitialCreate",
+  "capturedAt": "2026-07-30T19:56:41.3649948+00:00",
+  "dbSchemaVersion": "20260722204044_BreakingMakeDescriptionNonNull",
   "queries": [
     {
-      "sql": "INSERT INTO \u0022OrderItems\u0022 (\u0022OrderId\u0022, \u0022ProductName\u0022, \u0022Quantity\u0022)\r\nVALUES (@p2, @p3, @p4)\r\nRETURNING \u0022Id\u0022;\r\n",
+      "sql": "INSERT INTO \u0022OrderItems\u0022 (\u0022Description\u0022, \u0022OrderId\u0022, \u0022ProductName\u0022, \u0022Quantity\u0022)\r\nVALUES (@p2, @p3, @p4, @p5)\r\nRETURNING \u0022Id\u0022;\r\n",
       "parameterTypes": [
+        "String",
         "Int32",
         "String",
         "Int32"
@@ -46,9 +47,14 @@
       "executionCount": 1
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022, o0.\u0022Id\u0022, o0.\u0022OrderId\u0022, o0.\u0022ProductName\u0022, o0.\u0022Quantity\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nLEFT JOIN \u0022OrderItems\u0022 AS o0 ON o.\u0022Id\u0022 = o0.\u0022OrderId\u0022\r\nORDER BY o.\u0022Id\u0022",
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022, o0.\u0022Id\u0022, o0.\u0022Description\u0022, o0.\u0022OrderId\u0022, o0.\u0022ProductName\u0022, o0.\u0022Quantity\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nLEFT JOIN \u0022OrderItems\u0022 AS o0 ON o.\u0022Id\u0022 = o0.\u0022OrderId\u0022\r\nORDER BY o.\u0022Id\u0022",
       "parameterTypes": [],
       "executionCount": 1
+    },
+    {
+      "sql": "UPDATE \u0022OrderItems\u0022 SET \u0022Description\u0022 = \u0027\u0027 WHERE \u0022Description\u0022 IS NULL;\r\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET NOT NULL;\r\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET DEFAULT \u0027\u0027;\r\n",
+      "parameterTypes": [],
+      "executionCount": 2
     }
   ]
 }

@@ -8,10 +8,10 @@ using SampleDb;
 
 #nullable disable
 
-namespace SampleDb.Migrations
+namespace SampleDb.BrokenMigrations
 {
-    [DbContext(typeof(SampleDbContext))]
-    partial class SampleDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(SampleDbContextBroken))]
+    partial class SampleDbContextBrokenModelSnapshot : ModelSnapshot
     {
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
@@ -52,7 +52,6 @@ namespace SampleDb.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Description")
-                        .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 

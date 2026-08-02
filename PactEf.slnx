@@ -1,0 +1,22 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/samples/">
+    <Project Path="samples/BrokenSampleConsumer.Tests/BrokenSampleConsumer.Tests.csproj" />
+    <Project Path="samples/BrokenSampleConsumer/BrokenSampleConsumer.csproj" />
+    <Project Path="samples/SampleConsumer.Tests/SampleConsumer.Tests.csproj" />
+    <Project Path="samples/SampleConsumer/SampleConsumer.csproj" />
+    <Project Path="samples/SampleDb/SampleDb.csproj" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/PactEf.Capture.Tests/PactEf.Capture.Tests.csproj" />
+    <Project Path="src/PactEf.Capture/PactEf.Capture.csproj" />
+    <Project Path="src/PactEf.Core.Tests/PactEf.Core.Tests.csproj" />
+    <Project Path="src/PactEf.Core/PactEf.Core.csproj" />
+    <Project Path="src/PactEf.Verify.Tests/PactEf.Verify.Tests.csproj" />
+    <Project Path="src/PactEf.Verify/PactEf.Verify.csproj" />
+  </Folder>
+</Solution>

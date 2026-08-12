@@ -1,4 +1,39 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(dotnet *)",
+      "Bash(bd *)"
+    ],
+    "deny": [
+      "Bash(git add .)",
+      "Read(*nuget.config*)",
+      "Bash(curl *)",
+      "EnterPlanMode",
+      "ExitPlanMode",
+      "DesignSync",
+      "NotebookEdit",
+      "SendMessage",
+      "PushNotification",
+      "RemoteTrigger",
+      "ReportFindings",
+      "ScheduleWakeup",
+      "CronCreate",
+      "CronDelete",
+      "CronList"
+    ],
+    "defaultMode": "acceptEdits"
+  },
+  "disableBundledSkills": true,
+  "disableWorkflows": true,
+  "disableRemoteControl": true,
+  "disableClaudeAiConnectors": true,
+  "disableArtifact": true,
+  "statusLine": {
+    "type": "command",
+    "command": "context-mode statusline"
+  },
+  "effortLevel": "medium",
+  "promptSuggestionEnabled": false,
   "hooks": {
     "SessionStart": [
       {

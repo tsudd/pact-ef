@@ -1,0 +1,49 @@
+schemaVersion: "2"
+kind: sandbox
+name: pact-ef-dev-kit
+description: Pact EF development kit
+sandbox:
+  image: "docker/sandbox-templates:claude-code-docker"
+  entrypoint: [bash, "/home/agent/scripts/ralph.sh", "10"]
+
+setup:
+  install:
+    - command: "curl -fsSL https://claude.ai/install.sh | bash"
+      user: "1000"
+      description: Install Claude Code
+    - command: "apt-get update && apt-get install -y dotnet-sdk-10.0 nodejs npm wget jq postgresql-client"
+      description: "Required dependencies for Pact EF development"
+    # GitHub CLI setup
+    - command: "(type -p wget >/dev/null || (apt update && apt install wget -y)) && mkdir -p -m 755 /etc/apt/keyrings && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && mkdir -p -m 755 /etc/apt/sources.list.d && echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && apt install gh -y"
+    - command: "git config --global user.name \"$GIT_USER\" && git config --global user.email \"$GIT_EMAIL\""
+    # beads: local issues tracker for AI agents
+    - command: "curl -fsSL https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh | bash"
+    - command: "bd metrics off"
+    # dotnet sources setup
+    - command: "dotnet tool install --global dotnet-ef --version 10.0.10"
+    # claude setup
+    - command: "npm install -g context-mode"
+    - command: "claude plugin marketplace add mksglu/context-mode"
+    - command: "claude plugin install context-mode@context-mode"
+
+environment:
+  variables:
+    GIT_USER: "Aliaksandr Khrystsenka"
+    GIT_EMAIL: "alex.kr1stehko@gmail.com"
+    BD_JSON_ENVELOPE: "1"
+    ASPNETCORE_ENVIRONMENT: "Testing"
+
+
+permissions:
+  network:
+    allow: [
+      nuget.org,
+      "*.nuget.org",
+      nuget.pkg.github.com,
+      api.github.com,
+      github.com,
+      api.anthropic.com,
+      claude.ai,
+      console.anthropic.com,
+    ]
+

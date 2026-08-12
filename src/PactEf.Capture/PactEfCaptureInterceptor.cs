@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Npgsql;
 using PactEf.Capture.TestContext;
 using PactEf.Capture.Utilities;
 using PactEf.Core.Models;
@@ -81,20 +82,35 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
             await _schemaVersionReader.GetAsync(command.Connection);
         }
 
-        var paramTypes = command.Parameters
-            .Cast<DbParameter>()
-            .Select(p => p.DbType.ToString())
-            .ToList();
+        var dbParameters = command.Parameters.Cast<DbParameter>().ToList();
+        var paramTypes = dbParameters.Select(p => p.DbType.ToString()).ToList();
+        var parameters = dbParameters.Select(ToParameterMetadata).ToList();
 
         var entry = new QueryEntry
         {
             Sql = sql,
             ParameterTypes = paramTypes,
+            Parameters = parameters,
             TestName = PactEfTestContext.Current,
             TestClass = PactEfTestContext.CurrentClass
         };
 
         _buffer.Add(entry);
+    }
+
+    internal static ParameterMetadata ToParameterMetadata(DbParameter parameter)
+    {
+        return new ParameterMetadata
+        {
+            Name = parameter.ParameterName,
+            ClrType = parameter.Value?.GetType().Name,
+            DbType = parameter.DbType.ToString(),
+            StoreType = parameter is NpgsqlParameter npgsqlParameter
+                ? npgsqlParameter.NpgsqlDbType.ToString()
+                : null,
+            IsNullable = parameter.IsNullable,
+            Size = parameter.Size == 0 ? null : parameter.Size
+        };
     }
 
     private static bool IsDml(string sql)

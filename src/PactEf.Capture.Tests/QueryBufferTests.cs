@@ -49,6 +49,25 @@ public class QueryBufferTests
     }
 
     [Fact]
+    public void Add_EntryWithParameters_PreservesParametersInGetAll()
+    {
+        // Arrange
+        var buffer = new QueryBuffer();
+        var parameters = new List<ParameterMetadata>
+        {
+            new() { Name = "@p0", ClrType = "Int32", DbType = "Int32" }
+        };
+        buffer.Add(new QueryEntry { Sql = "SELECT 1", ParameterTypes = ["Int32"], Parameters = parameters });
+
+        // Act
+        var entries = buffer.GetAll();
+
+        // Assert
+        Assert.Single(entries[0].Parameters);
+        Assert.Equal("@p0", entries[0].Parameters[0].Name);
+    }
+
+    [Fact]
     public void Add_SameSqlWithDifferentTestNames_DeduplicatesKeepingFirstTestName()
     {
         // Arrange

@@ -22,6 +22,7 @@ internal sealed class QueryBuffer
             {
                 Sql = v.Entry.Sql,
                 ParameterTypes = v.Entry.ParameterTypes,
+                Parameters = v.Entry.Parameters,
                 ExecutionCount = v.Count,
                 TestName = v.Entry.TestName,
                 TestClass = v.Entry.TestClass

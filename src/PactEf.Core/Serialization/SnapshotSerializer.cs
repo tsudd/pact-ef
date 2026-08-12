@@ -6,6 +6,8 @@ namespace PactEf.Core.Serialization;
 
 public static class SnapshotSerializer
 {
+    private const string CurrentSchemaVersion = "2.0";
+
     private static readonly JsonSerializerOptions Options = new()
     {
         WriteIndented = true,
@@ -17,7 +19,7 @@ public static class SnapshotSerializer
     {
         var ordered = new SnapshotFile
         {
-            SchemaVersion = snapshot.SchemaVersion,
+            SchemaVersion = CurrentSchemaVersion,
             ConsumerName = snapshot.ConsumerName,
             CapturedAt = snapshot.CapturedAt,
             DbSchemaVersion = snapshot.DbSchemaVersion,
@@ -30,8 +32,35 @@ public static class SnapshotSerializer
 
     public static SnapshotFile Deserialize(string json)
     {
-        return JsonSerializer.Deserialize<SnapshotFile>(json, Options)
+        var snapshot = JsonSerializer.Deserialize<SnapshotFile>(json, Options)
             ?? throw new InvalidOperationException("Failed to deserialize snapshot.");
+
+        return new SnapshotFile
+        {
+            SchemaVersion = snapshot.SchemaVersion,
+            ConsumerName = snapshot.ConsumerName,
+            CapturedAt = snapshot.CapturedAt,
+            DbSchemaVersion = snapshot.DbSchemaVersion,
+            Queries = snapshot.Queries.Select(ApplyLegacyParameterFallback).ToList()
+        };
+    }
+
+    private static QueryEntry ApplyLegacyParameterFallback(QueryEntry entry)
+    {
+        if (entry.Parameters.Count > 0 || entry.ParameterTypes.Count == 0)
+            return entry;
+
+        return new QueryEntry
+        {
+            Sql = entry.Sql,
+            ParameterTypes = entry.ParameterTypes,
+            Parameters = entry.ParameterTypes
+                .Select(clrType => new ParameterMetadata { ClrType = clrType })
+                .ToList(),
+            ExecutionCount = entry.ExecutionCount,
+            TestName = entry.TestName,
+            TestClass = entry.TestClass
+        };
     }
 
     public static async Task WriteToFileAsync(SnapshotFile snapshot, string filePath)

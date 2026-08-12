@@ -54,7 +54,7 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
         InterceptionResult<DbDataReader> result,
         CancellationToken cancellationToken = default)
     {
-        await CaptureAsync(command);
+        await CaptureAsync(command, eventData);
         return await base.ReaderExecutingAsync(command, eventData, result, cancellationToken);
     }
 
@@ -64,11 +64,11 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
-        await CaptureAsync(command);
+        await CaptureAsync(command, eventData);
         return await base.NonQueryExecutingAsync(command, eventData, result, cancellationToken);
     }
 
-    private async Task CaptureAsync(DbCommand command)
+    private async Task CaptureAsync(DbCommand command, CommandEventData eventData)
     {
         var sql = command.CommandText;
 
@@ -84,7 +84,8 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
 
         var dbParameters = command.Parameters.Cast<DbParameter>().ToList();
         var paramTypes = dbParameters.Select(p => p.DbType.ToString()).ToList();
-        var parameters = dbParameters.Select(ToParameterMetadata).ToList();
+        var parameters = ModelParameterMetadataResolver.Enrich(
+            dbParameters.Select(ToParameterMetadata).ToList(), sql, eventData.Context?.Model);
 
         var entry = new QueryEntry
         {

@@ -30,4 +30,7 @@
   <ItemGroup>
     <Folder Include="BrokenMigrations\" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Verification\fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>

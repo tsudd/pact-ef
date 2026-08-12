@@ -70,7 +70,38 @@ public sealed class SchemaVerificationTests : IAsyncLifetime
             Assert.Contains("FAILED", ex.Message);
             return;
         }
-        
+
         Assert.Fail();
+    }
+
+    [Fact]
+    [Trait("Category", "PactEfVerification")]
+    public async Task BoundaryVariant_MaxLengthExceedsColumn_FailsWithTruncationError()
+    {
+        // Arrange: fixture captures an INSERT into "Orders"."Status" (varchar(50)) with
+        // ParameterMetadata.MaxLength = 100, so the generated boundary-value replay writes
+        // a 100-char string that the column can no longer hold.
+        var fixturePath = Path.Combine(AppContext.BaseDirectory, "Verification", "fixtures", "boundary-consumer");
+
+        // Act & Assert
+        var exception = await Assert.ThrowsAsync<PactEfVerificationException>(() =>
+            PactEfVerifier.VerifyAllAsync(options =>
+            {
+                options.SnapshotSources = [SnapshotSource.FromFolder(fixturePath)];
+                options.ConnectionString = _container.GetConnectionString();
+                options.Provider = DbProvider.PostgreSql;
+                options.DefaultMode = VerificationMode.Explain;
+            }));
+
+        Assert.Contains("22001", exception.Message);
+        Assert.Contains(exception.Failures, f => f.ErrorCode == "22001");
+
+        // Assert: the mutating replay was rolled back, leaving the table empty.
+        await using var conn = new Npgsql.NpgsqlConnection(_container.GetConnectionString());
+        await conn.OpenAsync();
+        await using var cmd = conn.CreateCommand();
+        cmd.CommandText = "SELECT COUNT(*) FROM \"Orders\"";
+        var count = (long)(await cmd.ExecuteScalarAsync())!;
+        Assert.Equal(0, count);
     }
 }

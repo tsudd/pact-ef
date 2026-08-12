@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "2",
+  "consumerName": "BoundaryConsumer",
+  "capturedAt": "2026-08-12T00:00:00Z",
+  "dbSchemaVersion": "20260514000000_InitialCreate",
+  "queries": [
+    {
+      "sql": "INSERT INTO \"Orders\" (\"CreatedAt\", \"Status\")\r\nVALUES (@p0, @p1)\r\nRETURNING \"Id\";\r\n",
+      "parameterTypes": ["DateTime", "String"],
+      "parameters": [
+        { "name": "CreatedAt", "clrType": "DateTime", "isNullable": false },
+        { "name": "Status", "clrType": "String", "dbType": "String", "storeType": "character varying(100)", "maxLength": 100, "isNullable": false }
+      ],
+      "executionCount": 1
+    }
+  ]
+}

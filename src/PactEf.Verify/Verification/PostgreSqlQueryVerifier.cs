@@ -1,9 +1,10 @@
+using System.Text.RegularExpressions;
 using Npgsql;
 using PactEf.Core.Models;
 
 namespace PactEf.Verify.Verification;
 
-internal sealed class PostgreSqlQueryVerifier(string connectionString) : IQueryVerifier
+internal sealed partial class PostgreSqlQueryVerifier(string connectionString) : IQueryVerifier
 {
     // Postgres error codes that indicate schema incompatibility
     private static readonly HashSet<string> SchemaErrorCodes = new()
@@ -13,7 +14,11 @@ internal sealed class PostgreSqlQueryVerifier(string connectionString) : IQueryV
         "42883", // undefined_function
         "42804", // datatype_mismatch
         "42601", // syntax_error
+        "22001", // string_data_right_truncation
     };
+
+    [GeneratedRegex(@"^\s*(INSERT|UPDATE|DELETE)\b", RegexOptions.IgnoreCase)]
+    private static partial Regex MutatingStatementRegex();
 
     public async Task<VerificationResult> VerifyAsync(
         string sql,
@@ -24,46 +29,59 @@ internal sealed class PostgreSqlQueryVerifier(string connectionString) : IQueryV
         await using var conn = new NpgsqlConnection(connectionString);
         await conn.OpenAsync(cancellationToken);
 
+        var isMutating = MutatingStatementRegex().IsMatch(sql);
+        var variants = ReplayVariantMatrixBuilder.Build(sql, parameters);
+
+        foreach (var variant in variants)
+        {
+            try
+            {
+                if (isMutating)
+                    await RunMutatingVariantAsync(conn, variant.Sql, cancellationToken);
+                else if (mode == VerificationMode.Explain)
+                    await RunExplainAsync(conn, variant.Sql, cancellationToken);
+                else
+                    await RunFullExecutionAsync(conn, variant.Sql, cancellationToken);
+            }
+            catch (PostgresException ex) when (SchemaErrorCodes.Contains(ex.SqlState ?? ""))
+            {
+                return VerificationResult.Fail(ex.MessageText, ex.SqlState);
+            }
+            catch (Exception ex)
+            {
+                return VerificationResult.Fail(ex.Message);
+            }
+        }
+
+        return VerificationResult.Ok();
+    }
+
+    private static async Task RunExplainAsync(NpgsqlConnection conn, string substitutedSql, CancellationToken ct)
+    {
+        await using var cmd = new NpgsqlCommand($"EXPLAIN {substitutedSql}", conn);
+        await cmd.ExecuteNonQueryAsync(ct);
+    }
+
+    private static async Task RunFullExecutionAsync(NpgsqlConnection conn, string substitutedSql, CancellationToken ct)
+    {
+        await using var cmd = new NpgsqlCommand(substitutedSql, conn);
+        await cmd.ExecuteNonQueryAsync(ct);
+    }
+
+    // Mutating statements are executed for real (not EXPLAIN'd) so that constraint
+    // violations like string_data_right_truncation surface, but always rolled back so the
+    // verification run never leaves data behind.
+    private static async Task RunMutatingVariantAsync(NpgsqlConnection conn, string substitutedSql, CancellationToken ct)
+    {
+        await using var tx = await conn.BeginTransactionAsync(ct);
         try
         {
-            if (mode == VerificationMode.Explain)
-                return await RunExplainAsync(conn, sql, parameters, cancellationToken);
-            else
-                return await RunFullExecutionAsync(conn, sql, parameters, cancellationToken);
+            await using var cmd = new NpgsqlCommand(substitutedSql, conn, tx);
+            await cmd.ExecuteNonQueryAsync(ct);
         }
-        catch (PostgresException ex) when (SchemaErrorCodes.Contains(ex.SqlState ?? ""))
+        finally
         {
-            return VerificationResult.Fail(ex.MessageText, ex.SqlState);
+            await tx.RollbackAsync(ct);
         }
-        catch (Exception ex)
-        {
-            return VerificationResult.Fail(ex.Message);
-        }
-    }
-
-    private static async Task<VerificationResult> RunExplainAsync(
-        NpgsqlConnection conn,
-        string sql,
-        IReadOnlyList<ParameterMetadata> parameters,
-        CancellationToken ct)
-    {
-        var substituted = ParameterSubstitutor.Substitute(sql, parameters);
-        var explainSql = $"EXPLAIN {substituted}";
-
-        await using var cmd = new NpgsqlCommand(explainSql, conn);
-        await cmd.ExecuteNonQueryAsync(ct);
-        return VerificationResult.Ok();
-    }
-
-    private static async Task<VerificationResult> RunFullExecutionAsync(
-        NpgsqlConnection conn,
-        string sql,
-        IReadOnlyList<ParameterMetadata> parameters,
-        CancellationToken ct)
-    {
-        var substituted = ParameterSubstitutor.Substitute(sql, parameters);
-        await using var cmd = new NpgsqlCommand(substituted, conn);
-        await cmd.ExecuteNonQueryAsync(ct);
-        return VerificationResult.Ok();
     }
 }

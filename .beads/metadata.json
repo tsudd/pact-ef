@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "PactEf",
+  "project_id": "4798e3e3-90b8-4ef9-a936-3e95168c8a0b"
+}

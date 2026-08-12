@@ -1,4 +1,5 @@
 using Npgsql;
+using PactEf.Core.Models;
 
 namespace PactEf.Verify.Verification;
 
@@ -16,7 +17,7 @@ internal sealed class PostgreSqlQueryVerifier(string connectionString) : IQueryV
 
     public async Task<VerificationResult> VerifyAsync(
         string sql,
-        IReadOnlyList<string> parameterTypes,
+        IReadOnlyList<ParameterMetadata> parameters,
         VerificationMode mode,
         CancellationToken cancellationToken = default)
     {
@@ -26,9 +27,9 @@ internal sealed class PostgreSqlQueryVerifier(string connectionString) : IQueryV
         try
         {
             if (mode == VerificationMode.Explain)
-                return await RunExplainAsync(conn, sql, parameterTypes, cancellationToken);
+                return await RunExplainAsync(conn, sql, parameters, cancellationToken);
             else
-                return await RunFullExecutionAsync(conn, sql, parameterTypes, cancellationToken);
+                return await RunFullExecutionAsync(conn, sql, parameters, cancellationToken);
         }
         catch (PostgresException ex) when (SchemaErrorCodes.Contains(ex.SqlState ?? ""))
         {
@@ -43,10 +44,10 @@ internal sealed class PostgreSqlQueryVerifier(string connectionString) : IQueryV
     private static async Task<VerificationResult> RunExplainAsync(
         NpgsqlConnection conn,
         string sql,
-        IReadOnlyList<string> parameterTypes,
+        IReadOnlyList<ParameterMetadata> parameters,
         CancellationToken ct)
     {
-        var substituted = ParameterSubstitutor.Substitute(sql, parameterTypes);
+        var substituted = ParameterSubstitutor.Substitute(sql, parameters);
         var explainSql = $"EXPLAIN {substituted}";
 
         await using var cmd = new NpgsqlCommand(explainSql, conn);
@@ -57,10 +58,10 @@ internal sealed class PostgreSqlQueryVerifier(string connectionString) : IQueryV
     private static async Task<VerificationResult> RunFullExecutionAsync(
         NpgsqlConnection conn,
         string sql,
-        IReadOnlyList<string> parameterTypes,
+        IReadOnlyList<ParameterMetadata> parameters,
         CancellationToken ct)
     {
-        var substituted = ParameterSubstitutor.Substitute(sql, parameterTypes);
+        var substituted = ParameterSubstitutor.Substitute(sql, parameters);
         await using var cmd = new NpgsqlCommand(substituted, conn);
         await cmd.ExecuteNonQueryAsync(ct);
         return VerificationResult.Ok();

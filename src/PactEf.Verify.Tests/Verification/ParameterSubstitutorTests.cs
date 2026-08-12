@@ -1,3 +1,4 @@
+using PactEf.Core.Models;
 using PactEf.Verify.Verification;
 
 namespace PactEf.Verify.Tests.Verification;
@@ -31,10 +32,14 @@ public class ParameterSubstitutorTests
     {
         // Arrange
         var sql = "SELECT * FROM \"Orders\" WHERE \"Id\" = $1 AND \"Status\" = $2";
-        var types = new[] { "Int32", "String" };
+        var parameters = new[]
+        {
+            new ParameterMetadata { ClrType = "Int32" },
+            new ParameterMetadata { ClrType = "String" }
+        };
 
         // Act
-        var result = ParameterSubstitutor.Substitute(sql, types);
+        var result = ParameterSubstitutor.Substitute(sql, parameters);
 
         // Assert
         Assert.Equal("SELECT * FROM \"Orders\" WHERE \"Id\" = 0 AND \"Status\" = ''", result);
@@ -45,10 +50,10 @@ public class ParameterSubstitutorTests
     {
         // Arrange
         var sql = "SELECT o.\"Id\", o.\"Status\" FROM \"Orders\" AS o WHERE o.\"Id\" = @__id_0 LIMIT 1";
-        var types = new[] { "Int32" };
+        var parameters = new[] { new ParameterMetadata { ClrType = "Int32" } };
 
         // Act
-        var result = ParameterSubstitutor.Substitute(sql, types);
+        var result = ParameterSubstitutor.Substitute(sql, parameters);
 
         // Assert
         Assert.Equal("SELECT o.\"Id\", o.\"Status\" FROM \"Orders\" AS o WHERE o.\"Id\" = 0 LIMIT 1", result);
@@ -59,10 +64,14 @@ public class ParameterSubstitutorTests
     {
         // Arrange
         var sql = "INSERT INTO \"Orders\" (\"CreatedAt\", \"Status\")\nVALUES (@p0, @p1)\nRETURNING \"Id\";\n";
-        var types = new[] { "DateTime", "String" };
+        var parameters = new[]
+        {
+            new ParameterMetadata { ClrType = "DateTime" },
+            new ParameterMetadata { ClrType = "String" }
+        };
 
         // Act
-        var result = ParameterSubstitutor.Substitute(sql, types);
+        var result = ParameterSubstitutor.Substitute(sql, parameters);
 
         // Assert
         Assert.Equal("INSERT INTO \"Orders\" (\"CreatedAt\", \"Status\")\nVALUES ('2000-01-01', '')\nRETURNING \"Id\";\n", result);
@@ -79,5 +88,38 @@ public class ParameterSubstitutorTests
 
         // Assert
         Assert.Equal(sql, result);
+    }
+
+    [Fact]
+    public void Substitute_LegacyParameterMetadata_ClrTypeOnly_UsesDefaultLiteral()
+    {
+        // Arrange: metadata projected from a legacy v1 snapshot only carries ClrType
+        var sql = "SELECT * FROM \"Orders\" WHERE \"Id\" = @__id_0";
+        var parameters = new[] { new ParameterMetadata { ClrType = "Int32" } };
+
+        // Act
+        var result = ParameterSubstitutor.Substitute(sql, parameters);
+
+        // Assert
+        Assert.Equal("SELECT * FROM \"Orders\" WHERE \"Id\" = 0", result);
+    }
+
+    [Fact]
+    public void Substitute_ValueOverride_UsesCallerSuppliedLiteralInsteadOfDefault()
+    {
+        // Arrange
+        var sql = "SELECT * FROM \"Orders\" WHERE \"Name\" = @p0 AND \"Id\" = @p1";
+        var parameters = new[]
+        {
+            new ParameterMetadata { ClrType = "String", MaxLength = 10 },
+            new ParameterMetadata { ClrType = "Int32" }
+        };
+        var overrides = new Dictionary<int, string> { [0] = "'AAAAAAAAAA'" };
+
+        // Act
+        var result = ParameterSubstitutor.Substitute(sql, parameters, overrides);
+
+        // Assert
+        Assert.Equal("SELECT * FROM \"Orders\" WHERE \"Name\" = 'AAAAAAAAAA' AND \"Id\" = 0", result);
     }
 }

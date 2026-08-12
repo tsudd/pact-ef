@@ -41,7 +41,7 @@ public static class PactEfVerifier
             {
                 var result = await verifier.VerifyAsync(
                     query.Sql,
-                    query.ParameterTypes,
+                    query.Parameters,
                     options.DefaultMode,
                     cancellationToken);
 

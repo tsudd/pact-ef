@@ -65,6 +65,34 @@ public class ReplayVariantMatrixBuilderTests
     }
 
     [Fact]
+    public void Build_NoConsumerMaxLengthWithDiscoveredLength_AddsBoundaryVariantFromDatabase()
+    {
+        var sql = "INSERT INTO \"OrderItems\" (\"Description\") VALUES (@p0)";
+        var parameters = new[] { new ParameterMetadata { Name = "Description", ClrType = "String" } };
+
+        var variants = ReplayVariantMatrixBuilder.Build(
+            sql, parameters, discoveredMaxLengths: new Dictionary<int, int> { [0] = 100 });
+
+        var maxLengthVariant = Assert.Single(variants, v => v.Kind == ReplayVariantKind.BoundaryMaxLength);
+        Assert.Equal($"INSERT INTO \"OrderItems\" (\"Description\") VALUES ('{new string('A', 100)}')", maxLengthVariant.Sql);
+        Assert.Equal(BoundLengthSource.Database, maxLengthVariant.BoundSource);
+    }
+
+    [Fact]
+    public void Build_ConsumerMaxLength_ReportsConsumerSourceIgnoringDiscoveredLength()
+    {
+        var sql = "INSERT INTO \"Orders\" (\"Status\") VALUES (@p0)";
+        var parameters = new[] { new ParameterMetadata { Name = "Status", ClrType = "String", MaxLength = 5 } };
+
+        var variants = ReplayVariantMatrixBuilder.Build(
+            sql, parameters, discoveredMaxLengths: new Dictionary<int, int> { [0] = 100 });
+
+        var maxLengthVariant = Assert.Single(variants, v => v.Kind == ReplayVariantKind.BoundaryMaxLength);
+        Assert.Equal("INSERT INTO \"Orders\" (\"Status\") VALUES ('AAAAA')", maxLengthVariant.Sql);
+        Assert.Equal(BoundLengthSource.Consumer, maxLengthVariant.BoundSource);
+    }
+
+    [Fact]
     public void Build_IsDeterministic_AcrossRuns()
     {
         var sql = "INSERT INTO \"Orders\" (\"Status\") VALUES (@p0)";

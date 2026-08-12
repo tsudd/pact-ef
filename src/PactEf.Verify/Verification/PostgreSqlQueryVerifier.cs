@@ -30,7 +30,8 @@ internal sealed partial class PostgreSqlQueryVerifier(string connectionString) :
         await conn.OpenAsync(cancellationToken);
 
         var isMutating = MutatingStatementRegex().IsMatch(sql);
-        var variants = ReplayVariantMatrixBuilder.Build(sql, parameters);
+        var discoveredMaxLengths = await ResolveDiscoveredMaxLengthsAsync(conn, sql, parameters, cancellationToken);
+        var variants = ReplayVariantMatrixBuilder.Build(sql, parameters, discoveredMaxLengths);
 
         foreach (var variant in variants)
         {
@@ -54,6 +55,56 @@ internal sealed partial class PostgreSqlQueryVerifier(string connectionString) :
         }
 
         return VerificationResult.Ok();
+    }
+
+    // Best-effort: when a parameter has no consumer-declared MaxLength, look up the live
+    // schema's column length so the boundary variant reflects a real database constraint
+    // instead of skipping the check entirely. Never fails the run if resolution can't happen.
+    private static async Task<IReadOnlyDictionary<int, int>?> ResolveDiscoveredMaxLengthsAsync(
+        NpgsqlConnection conn, string sql, IReadOnlyList<ParameterMetadata> parameters, CancellationToken ct)
+    {
+        if (parameters.All(p => p.MaxLength is not null))
+            return null;
+
+        IReadOnlyDictionary<string, (string Table, string Column)> columnRefs;
+        try
+        {
+            columnRefs = SqlColumnReferenceResolver.Resolve(sql);
+        }
+        catch
+        {
+            return null;
+        }
+
+        Dictionary<int, int>? discovered = null;
+
+        for (var i = 0; i < parameters.Count; i++)
+        {
+            var parameter = parameters[i];
+            if (parameter.MaxLength is not null || parameter.Name is null)
+                continue;
+
+            if (!columnRefs.TryGetValue(parameter.Name, out var reference))
+                continue;
+
+            int? length;
+            try
+            {
+                length = await DatabaseColumnLengthResolver.GetMaxLengthAsync(conn, reference.Table, reference.Column, ct);
+            }
+            catch
+            {
+                length = null;
+            }
+
+            if (length is int value)
+            {
+                discovered ??= new Dictionary<int, int>();
+                discovered[i] = value;
+            }
+        }
+
+        return discovered;
     }
 
     private static async Task RunExplainAsync(NpgsqlConnection conn, string substitutedSql, CancellationToken ct)

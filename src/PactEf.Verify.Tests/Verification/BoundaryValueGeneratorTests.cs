@@ -58,6 +58,40 @@ public class BoundaryValueGeneratorTests
     }
 
     [Fact]
+    public void Generate_ConsumerMaxLength_UsesConsumerSourceOverDiscovered()
+    {
+        var parameter = new ParameterMetadata { ClrType = "String", MaxLength = 5 };
+
+        var variants = BoundaryValueGenerator.Generate(parameter, discoveredMaxLength: 100);
+
+        var variant = Assert.Single(variants, v => v.Kind == BoundaryValueKind.MaxLength);
+        Assert.Equal("'AAAAA'", variant.Literal);
+        Assert.Equal(BoundLengthSource.Consumer, variant.Source);
+    }
+
+    [Fact]
+    public void Generate_NoConsumerMaxLengthButDiscovered_UsesDiscoveredLengthWithDatabaseSource()
+    {
+        var parameter = new ParameterMetadata { ClrType = "String", MaxLength = null };
+
+        var variants = BoundaryValueGenerator.Generate(parameter, discoveredMaxLength: 100);
+
+        var variant = Assert.Single(variants, v => v.Kind == BoundaryValueKind.MaxLength);
+        Assert.Equal($"'{new string('A', 100)}'", variant.Literal);
+        Assert.Equal(BoundLengthSource.Database, variant.Source);
+    }
+
+    [Fact]
+    public void Generate_NoConsumerMaxLengthAndNoDiscovered_ReturnsNoBoundaryVariant()
+    {
+        var parameter = new ParameterMetadata { ClrType = "String", MaxLength = null };
+
+        var variants = BoundaryValueGenerator.Generate(parameter, discoveredMaxLength: null);
+
+        Assert.Empty(variants);
+    }
+
+    [Fact]
     public void Generate_IsDeterministic_AcrossRuns()
     {
         var parameter = new ParameterMetadata { ClrType = "String", MaxLength = 8, IsNullable = true };

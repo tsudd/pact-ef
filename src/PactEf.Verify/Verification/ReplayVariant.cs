@@ -9,7 +9,8 @@ internal enum ReplayVariantKind
     BoundaryNull
 }
 
-internal sealed record ReplayVariant(string Sql, ReplayVariantKind Kind, string? ParameterName);
+internal sealed record ReplayVariant(
+    string Sql, ReplayVariantKind Kind, string? ParameterName, BoundLengthSource? BoundSource = null);
 
 internal static class ReplayVariantMatrixBuilder
 {
@@ -18,7 +19,14 @@ internal static class ReplayVariantMatrixBuilder
     /// parameter (max-length string, null where nullable). Each variant substitutes only the
     /// target parameter with its boundary literal; all other parameters keep their default literal.
     /// </summary>
-    public static IReadOnlyList<ReplayVariant> Build(string sql, IReadOnlyList<ParameterMetadata> parameters)
+    /// <param name="discoveredMaxLengths">
+    /// Database-discovered column lengths keyed by parameter index, used only for parameters
+    /// with no consumer-declared MaxLength.
+    /// </param>
+    public static IReadOnlyList<ReplayVariant> Build(
+        string sql,
+        IReadOnlyList<ParameterMetadata> parameters,
+        IReadOnlyDictionary<int, int>? discoveredMaxLengths = null)
     {
         var variants = new List<ReplayVariant>
         {
@@ -27,7 +35,11 @@ internal static class ReplayVariantMatrixBuilder
 
         for (var i = 0; i < parameters.Count; i++)
         {
-            foreach (var boundary in BoundaryValueGenerator.Generate(parameters[i]))
+            var discoveredMaxLength = discoveredMaxLengths is not null && discoveredMaxLengths.TryGetValue(i, out var len)
+                ? len
+                : (int?)null;
+
+            foreach (var boundary in BoundaryValueGenerator.Generate(parameters[i], discoveredMaxLength))
             {
                 var overrides = new Dictionary<int, string> { [i] = boundary.Literal };
                 var variantSql = ParameterSubstitutor.Substitute(sql, parameters, overrides);
@@ -35,7 +47,7 @@ internal static class ReplayVariantMatrixBuilder
                     ? ReplayVariantKind.BoundaryMaxLength
                     : ReplayVariantKind.BoundaryNull;
 
-                variants.Add(new ReplayVariant(variantSql, kind, parameters[i].Name));
+                variants.Add(new ReplayVariant(variantSql, kind, parameters[i].Name, boundary.Source));
             }
         }
 

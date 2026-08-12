@@ -9,7 +9,12 @@ public sealed record QueryFailure(
     string ErrorMessage,
     string? ErrorCode,
     string? CapturedSchemaVersion,
-    string? CurrentSchemaVersion);
+    string? CurrentSchemaVersion,
+    string? ParameterName = null,
+    string? VariantKind = null,
+    int? TestedLength = null,
+    int? ConsumerMaxLength = null,
+    int? DatabaseMaxLength = null);
 
 public static class FailureReport
 {
@@ -35,6 +40,12 @@ public static class FailureReport
 
                 if (failure.CapturedSchemaVersion is not null || failure.CurrentSchemaVersion is not null)
                     sb.AppendLine($"    Schema captured against: {failure.CapturedSchemaVersion ?? "unknown"} → current: {failure.CurrentSchemaVersion ?? "unknown"}");
+
+                if (failure.ParameterName is not null)
+                {
+                    sb.AppendLine($"    Parameter: {failure.ParameterName} ({failure.VariantKind ?? "unknown"} variant, tested length: {failure.TestedLength?.ToString() ?? "unspecified"})");
+                    sb.AppendLine($"    Database constraint discovered: {failure.DatabaseMaxLength?.ToString() ?? "unspecified"} / Consumer constraint: {failure.ConsumerMaxLength?.ToString() ?? "unspecified"}");
+                }
             }
             sb.AppendLine();
         }

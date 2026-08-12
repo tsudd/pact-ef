@@ -20,7 +20,7 @@ internal enum BoundLengthSource
     Database
 }
 
-internal sealed record BoundaryValue(BoundaryValueKind Kind, string Literal, BoundLengthSource? Source = null);
+internal sealed record BoundaryValue(BoundaryValueKind Kind, string Literal, BoundLengthSource? Source = null, int? Length = null);
 
 internal static class BoundaryValueGenerator
 {
@@ -35,12 +35,12 @@ internal static class BoundaryValueGenerator
         if (parameter.MaxLength is int maxLength && maxLength > 0)
         {
             variants.Add(new BoundaryValue(
-                BoundaryValueKind.MaxLength, $"'{new string('A', maxLength)}'", BoundLengthSource.Consumer));
+                BoundaryValueKind.MaxLength, $"'{new string('A', maxLength)}'", BoundLengthSource.Consumer, maxLength));
         }
         else if (discoveredMaxLength is int dbLength && dbLength > 0)
         {
             variants.Add(new BoundaryValue(
-                BoundaryValueKind.MaxLength, $"'{new string('A', dbLength)}'", BoundLengthSource.Database));
+                BoundaryValueKind.MaxLength, $"'{new string('A', dbLength)}'", BoundLengthSource.Database, dbLength));
         }
 
         if (parameter.IsNullable == true)

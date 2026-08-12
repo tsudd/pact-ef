@@ -54,7 +54,12 @@ public static class PactEfVerifier
                         ErrorMessage: result.ErrorMessage ?? "Unknown error",
                         ErrorCode: result.PostgresErrorCode,
                         CapturedSchemaVersion: snapshot.DbSchemaVersion,
-                        CurrentSchemaVersion: currentSchemaVersion));
+                        CurrentSchemaVersion: currentSchemaVersion,
+                        ParameterName: result.ParameterName,
+                        VariantKind: result.VariantKind,
+                        TestedLength: result.TestedLength,
+                        ConsumerMaxLength: result.ConsumerMaxLength,
+                        DatabaseMaxLength: result.DatabaseMaxLength));
                 }
             }
         }

@@ -10,7 +10,11 @@ internal enum ReplayVariantKind
 }
 
 internal sealed record ReplayVariant(
-    string Sql, ReplayVariantKind Kind, string? ParameterName, BoundLengthSource? BoundSource = null);
+    string Sql,
+    ReplayVariantKind Kind,
+    string? ParameterName,
+    BoundLengthSource? BoundSource = null,
+    int? TestedLength = null);
 
 internal static class ReplayVariantMatrixBuilder
 {
@@ -47,7 +51,7 @@ internal static class ReplayVariantMatrixBuilder
                     ? ReplayVariantKind.BoundaryMaxLength
                     : ReplayVariantKind.BoundaryNull;
 
-                variants.Add(new ReplayVariant(variantSql, kind, parameters[i].Name, boundary.Source));
+                variants.Add(new ReplayVariant(variantSql, kind, parameters[i].Name, boundary.Source, boundary.Length));
             }
         }
 

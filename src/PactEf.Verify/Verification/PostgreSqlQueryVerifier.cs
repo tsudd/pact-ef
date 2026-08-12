@@ -46,16 +46,41 @@ internal sealed partial class PostgreSqlQueryVerifier(string connectionString) :
             }
             catch (PostgresException ex) when (SchemaErrorCodes.Contains(ex.SqlState ?? ""))
             {
-                return VerificationResult.Fail(ex.MessageText, ex.SqlState);
+                return BuildFailure(ex.MessageText, ex.SqlState, variant, parameters);
             }
             catch (Exception ex)
             {
-                return VerificationResult.Fail(ex.Message);
+                return BuildFailure(ex.Message, null, variant, parameters);
             }
         }
 
         return VerificationResult.Ok();
     }
+
+    private static VerificationResult BuildFailure(
+        string message, string? errorCode, ReplayVariant variant, IReadOnlyList<ParameterMetadata> parameters)
+    {
+        var parameter = variant.ParameterName is not null
+            ? parameters.FirstOrDefault(p => p.Name == variant.ParameterName)
+            : null;
+
+        return VerificationResult.Fail(
+            message,
+            errorCode,
+            parameterName: variant.ParameterName,
+            variantKind: FormatVariantKind(variant.Kind),
+            testedLength: variant.TestedLength,
+            consumerMaxLength: parameter?.MaxLength,
+            databaseMaxLength: variant.BoundSource == BoundLengthSource.Database ? variant.TestedLength : null);
+    }
+
+    private static string FormatVariantKind(ReplayVariantKind kind) => kind switch
+    {
+        ReplayVariantKind.Baseline => "baseline",
+        ReplayVariantKind.BoundaryMaxLength => "boundary-max-length",
+        ReplayVariantKind.BoundaryNull => "boundary-null",
+        _ => kind.ToString()
+    };
 
     // Best-effort: when a parameter has no consumer-declared MaxLength, look up the live
     // schema's column length so the boundary variant reflects a real database constraint

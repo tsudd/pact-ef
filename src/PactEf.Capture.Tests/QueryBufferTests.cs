@@ -68,6 +68,35 @@ public class QueryBufferTests
     }
 
     [Fact]
+    public void Add_SameSqlTwiceWithDifferingParameterMetadata_MergesDeterministically()
+    {
+        // Arrange
+        var buffer = new QueryBuffer();
+        buffer.Add(new QueryEntry
+        {
+            Sql = "SELECT 1",
+            ParameterTypes = ["String"],
+            Parameters = [new ParameterMetadata { Name = "@p0", ClrType = "String", MaxLength = 50, IsNullable = null }]
+        });
+        buffer.Add(new QueryEntry
+        {
+            Sql = "SELECT 1",
+            ParameterTypes = ["String"],
+            Parameters = [new ParameterMetadata { Name = "@p0", ClrType = "String", MaxLength = 100, IsNullable = true }]
+        });
+
+        // Act
+        var entries = buffer.GetAll();
+
+        // Assert
+        Assert.Single(entries);
+        Assert.Equal(2, entries[0].ExecutionCount);
+        Assert.Single(entries[0].Parameters);
+        Assert.Equal(100, entries[0].Parameters[0].MaxLength);
+        Assert.True(entries[0].Parameters[0].IsNullable);
+    }
+
+    [Fact]
     public void Add_SameSqlWithDifferentTestNames_DeduplicatesKeepingFirstTestName()
     {
         // Arrange

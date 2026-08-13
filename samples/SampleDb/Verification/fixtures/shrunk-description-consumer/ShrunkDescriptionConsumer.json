@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "2",
+  "consumerName": "ShrunkDescriptionConsumer",
+  "capturedAt": "2026-08-13T00:00:00Z",
+  "dbSchemaVersion": "20260722200356_AddOptionalItemDescription",
+  "queries": [
+    {
+      "sql": "INSERT INTO \"OrderItems\" (\"Description\", \"OrderId\", \"ProductName\", \"Quantity\")\r\nVALUES (@p0, @p1, @p2, @p3)\r\nRETURNING \"Id\";\r\n",
+      "parameterTypes": ["String", "Int32", "String", "Int32"],
+      "parameters": [
+        { "name": "@p0", "clrType": "String", "dbType": "String", "storeType": "character varying(100)", "maxLength": 100, "isNullable": true },
+        { "name": "@p1", "clrType": "Int32", "dbType": "Int32", "storeType": "Integer", "isNullable": false },
+        { "name": "@p2", "clrType": "String", "dbType": "String", "storeType": "character varying(200)", "maxLength": 200, "isNullable": false },
+        { "name": "@p3", "clrType": "Int32", "dbType": "Int32", "storeType": "Integer", "isNullable": false }
+      ],
+      "executionCount": 1
+    }
+  ]
+}

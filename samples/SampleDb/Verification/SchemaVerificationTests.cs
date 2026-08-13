@@ -104,4 +104,54 @@ public sealed class SchemaVerificationTests : IAsyncLifetime
         var count = (long)(await cmd.ExecuteScalarAsync())!;
         Assert.Equal(0, count);
     }
+
+    [Fact]
+    [Trait("Category", "PactEfVerification")]
+    public async Task OrderItemDescriptionShrink_ExplainPassesButBoundaryReplayFails()
+    {
+        // Arrange: SampleConsumer once captured an INSERT into "OrderItems"."Description"
+        // when the column contract was varchar(100) (see fixture). A later migration
+        // (modeled by SampleDbContextShrunkDescription) shrinks that column to varchar(50).
+        // Because the INSERT is a mutating statement, PactEf executes the baseline replay for
+        // real (short default values succeed, mirroring what a plain EXPLAIN would report),
+        // then the generated max-length boundary variant writes a 100-char string that the
+        // shrunk column can no longer hold.
+        var container = new PostgreSqlBuilder().Build();
+        await container.StartAsync();
+        try
+        {
+            var options = new DbContextOptionsBuilder<SampleDbContextShrunkDescription>()
+                .UseNpgsql(container.GetConnectionString())
+                .Options;
+            await using var ctx = new SampleDbContextShrunkDescription(options);
+            await ctx.Database.MigrateAsync();
+
+            var fixturePath = Path.Combine(AppContext.BaseDirectory, "Verification", "fixtures", "shrunk-description-consumer");
+
+            // Act & Assert
+            var exception = await Assert.ThrowsAsync<PactEfVerificationException>(() =>
+                PactEfVerifier.VerifyAllAsync(options =>
+                {
+                    options.SnapshotSources = [SnapshotSource.FromFolder(fixturePath)];
+                    options.ConnectionString = container.GetConnectionString();
+                    options.Provider = DbProvider.PostgreSql;
+                    options.DefaultMode = VerificationMode.Explain;
+                }));
+
+            Assert.Contains("22001", exception.Message);
+            Assert.Contains(exception.Failures, f => f.ErrorCode == "22001");
+
+            // Assert: the mutating replay was rolled back, leaving the table empty.
+            await using var conn = new Npgsql.NpgsqlConnection(container.GetConnectionString());
+            await conn.OpenAsync();
+            await using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT COUNT(*) FROM \"OrderItems\"";
+            var count = (long)(await cmd.ExecuteScalarAsync())!;
+            Assert.Equal(0, count);
+        }
+        finally
+        {
+            await container.DisposeAsync();
+        }
+    }
 }

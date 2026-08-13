@@ -15,23 +15,31 @@ setup:
       description: "Required dependencies for Pact EF development"
     # GitHub CLI setup
     - command: "(type -p wget >/dev/null || (apt update && apt install wget -y)) && mkdir -p -m 755 /etc/apt/keyrings && out=$(mktemp) && wget -nv -O$out https://cli.github.com/packages/githubcli-archive-keyring.gpg && cat $out | tee /etc/apt/keyrings/githubcli-archive-keyring.gpg > /dev/null && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg && mkdir -p -m 755 /etc/apt/sources.list.d && echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main\" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null && apt install gh -y"
-    - command: "git config --global user.name \"$GIT_USER\" && git config --global user.email \"$GIT_EMAIL\""
+        # mise: tool version manager
+    - command: "curl https://mise.run | sh"
+      user: "1000"
     # beads: local issues tracker for AI agents
-    - command: "curl -fsSL https://raw.githubusercontent.com/gastownhall/beads/main/scripts/install.sh | bash"
-    - command: "bd metrics off"
+    - command: "mise install github:gastownhall/beads@1.2.1"
+    - command: "mise use -g github:gastownhall/beads@1.2.1"
+    - command: "bd metrics off && bd setup claude --global"
     # dotnet sources setup
     - command: "dotnet tool install --global dotnet-ef --version 10.0.10"
     # claude setup
     - command: "npm install -g context-mode"
     - command: "claude plugin marketplace add mksglu/context-mode"
     - command: "claude plugin install context-mode@context-mode"
+    - command: "chmod 700 ${WORKSPACE_DIR}/.beads"
+      user: "1000"
 
 environment:
   variables:
-    GIT_USER: "Aliaksandr Khrystsenka"
-    GIT_EMAIL: "alex.kr1stehko@gmail.com"
     BD_JSON_ENVELOPE: "1"
     ASPNETCORE_ENVIRONMENT: "Testing"
+    MISE_DATA_DIR: "/mise"
+    MISE_CONFIG_DIR: "/mise"
+    MISE_CACHE_DIR: "/mise/cache"
+    MISE_INSTALL_DIR: "/usr/local/bin/mise"
+    PATH: "/mise/shims:$PATH"
 
 
 permissions:

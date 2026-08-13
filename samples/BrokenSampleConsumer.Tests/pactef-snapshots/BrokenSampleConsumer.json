@@ -1,7 +1,7 @@
 {
-  "schemaVersion": "0",
+  "schemaVersion": "2.0",
   "consumerName": "BrokenSampleConsumer",
-  "capturedAt": "2026-07-30T19:56:50.9406248+00:00",
+  "capturedAt": "2026-08-12T20:23:53.4082819+00:00",
   "dbSchemaVersion": "20260730192039_LatestStateOfBrokenConsumer",
   "queries": [
     {
@@ -11,6 +11,38 @@
         "Int32",
         "String",
         "Int32"
+      ],
+      "parameters": [
+        {
+          "name": "@p0",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 1000,
+          "isNullable": true
+        },
+        {
+          "name": "@p1",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        },
+        {
+          "name": "@p2",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 200,
+          "isNullable": false
+        },
+        {
+          "name": "@p3",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        }
       ],
       "executionCount": 3
     },
@@ -22,6 +54,38 @@
         "String",
         "Int32"
       ],
+      "parameters": [
+        {
+          "name": "@p2",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 1000,
+          "isNullable": true
+        },
+        {
+          "name": "@p3",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        },
+        {
+          "name": "@p4",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 200,
+          "isNullable": false
+        },
+        {
+          "name": "@p5",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        }
+      ],
       "executionCount": 1
     },
     {
@@ -30,42 +94,132 @@
         "DateTime",
         "String"
       ],
+      "parameters": [
+        {
+          "name": "@p0",
+          "clrType": "DateTimeOffset",
+          "dbType": "DateTime",
+          "storeType": "TimestampTz",
+          "isNullable": false
+        },
+        {
+          "name": "@p1",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 50,
+          "isNullable": false
+        }
+      ],
+      "executionCount": 1
+    },
+    {
+      "sql": "SELECT 1",
+      "parameterTypes": [],
+      "parameters": [],
       "executionCount": 1
     },
     {
       "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nLIMIT 1",
       "parameterTypes": [],
+      "parameters": [],
       "executionCount": 3
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022Description\u0022, o.\u0022OrderId\u0022, o.\u0022ProductName\u0022, o.\u0022Quantity\u0022\r\nFROM \u0022OrderItems\u0022 AS o\r\nWHERE o.\u0022OrderId\u0022 = @__order_Id_0 AND o.\u0022ProductName\u0022 = \u0027Widget\u0027 AND o.\u0022Quantity\u0022 = 2\r\nLIMIT 2",
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022Description\u0022, o.\u0022OrderId\u0022, o.\u0022ProductName\u0022, o.\u0022Quantity\u0022\r\nFROM \u0022OrderItems\u0022 AS o\r\nWHERE o.\u0022OrderId\u0022 = @order_Id AND o.\u0022ProductName\u0022 = \u0027Widget\u0027 AND o.\u0022Quantity\u0022 = 2\r\nLIMIT 2",
       "parameterTypes": [
         "Int32"
+      ],
+      "parameters": [
+        {
+          "name": "@order_Id",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        }
       ],
       "executionCount": 1
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022Description\u0022, o.\u0022OrderId\u0022, o.\u0022ProductName\u0022, o.\u0022Quantity\u0022\r\nFROM \u0022OrderItems\u0022 AS o\r\nWHERE o.\u0022OrderId\u0022 = @__order_Id_0 AND o.\u0022ProductName\u0022 = @__8__locals1_productName_1 AND o.\u0022Description\u0022 = @__8__locals1_description_2 AND o.\u0022Quantity\u0022 = @__8__locals1_quantity_3\r\nLIMIT 2",
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022Description\u0022, o.\u0022OrderId\u0022, o.\u0022ProductName\u0022, o.\u0022Quantity\u0022\r\nFROM \u0022OrderItems\u0022 AS o\r\nWHERE o.\u0022OrderId\u0022 = @order_Id AND o.\u0022ProductName\u0022 = @_8__locals1_productName AND o.\u0022Description\u0022 = @_8__locals1_description AND o.\u0022Quantity\u0022 = @_8__locals1_quantity\r\nLIMIT 2",
       "parameterTypes": [
         "Int32",
         "String",
         "String",
         "Int32"
       ],
+      "parameters": [
+        {
+          "name": "@order_Id",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        },
+        {
+          "name": "@_8__locals1_productName",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 200,
+          "isNullable": true
+        },
+        {
+          "name": "@_8__locals1_description",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 1000,
+          "isNullable": true
+        },
+        {
+          "name": "@_8__locals1_quantity",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        }
+      ],
       "executionCount": 2
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022Description\u0022, o.\u0022OrderId\u0022, o.\u0022ProductName\u0022, o.\u0022Quantity\u0022\r\nFROM \u0022OrderItems\u0022 AS o\r\nWHERE o.\u0022OrderId\u0022 = @__order_Id_0 AND o.\u0022ProductName\u0022 = @__8__locals1_productName_1 AND o.\u0022Description\u0022 IS NULL AND o.\u0022Quantity\u0022 = @__8__locals1_quantity_3\r\nLIMIT 2",
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022Description\u0022, o.\u0022OrderId\u0022, o.\u0022ProductName\u0022, o.\u0022Quantity\u0022\r\nFROM \u0022OrderItems\u0022 AS o\r\nWHERE o.\u0022OrderId\u0022 = @order_Id AND o.\u0022ProductName\u0022 = @_8__locals1_productName AND o.\u0022Description\u0022 IS NULL AND o.\u0022Quantity\u0022 = @_8__locals1_quantity\r\nLIMIT 2",
       "parameterTypes": [
         "Int32",
         "String",
         "Int32"
+      ],
+      "parameters": [
+        {
+          "name": "@order_Id",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        },
+        {
+          "name": "@_8__locals1_productName",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 200,
+          "isNullable": true
+        },
+        {
+          "name": "@_8__locals1_quantity",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        }
       ],
       "executionCount": 1
     },
     {
       "sql": "SELECT o1.\u0022Id\u0022, o1.\u0022CreatedAt\u0022, o1.\u0022Status\u0022, o0.\u0022Id\u0022, o0.\u0022Description\u0022, o0.\u0022OrderId\u0022, o0.\u0022ProductName\u0022, o0.\u0022Quantity\u0022\r\nFROM (\r\n    SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\r\n    FROM \u0022Orders\u0022 AS o\r\n    LIMIT 1\r\n) AS o1\r\nLEFT JOIN \u0022OrderItems\u0022 AS o0 ON o1.\u0022Id\u0022 = o0.\u0022OrderId\u0022\r\nORDER BY o1.\u0022Id\u0022",
       "parameterTypes": [],
+      "parameters": [],
       "executionCount": 1
     },
     {
@@ -73,6 +227,23 @@
       "parameterTypes": [
         "Int32",
         "String"
+      ],
+      "parameters": [
+        {
+          "name": "@p1",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        },
+        {
+          "name": "@p0",
+          "clrType": "DBNull",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 1000,
+          "isNullable": true
+        }
       ],
       "executionCount": 1
     }

@@ -1,60 +1,168 @@
 {
-  "schemaVersion": "0",
+  "schemaVersion": "2.0",
   "consumerName": "SampleConsumer",
-  "capturedAt": "2026-07-30T19:56:41.3649948+00:00",
+  "capturedAt": "2026-08-13T16:30:55.7202648+00:00",
   "dbSchemaVersion": "20260722204044_BreakingMakeDescriptionNonNull",
   "queries": [
     {
-      "sql": "INSERT INTO \u0022OrderItems\u0022 (\u0022Description\u0022, \u0022OrderId\u0022, \u0022ProductName\u0022, \u0022Quantity\u0022)\r\nVALUES (@p2, @p3, @p4, @p5)\r\nRETURNING \u0022Id\u0022;\r\n",
+      "sql": "INSERT INTO \u0022OrderItems\u0022 (\u0022Description\u0022, \u0022OrderId\u0022, \u0022ProductName\u0022, \u0022Quantity\u0022)\nVALUES (@p2, @p3, @p4, @p5)\nRETURNING \u0022Id\u0022;\n",
       "parameterTypes": [
         "String",
         "Int32",
         "String",
         "Int32"
       ],
+      "parameters": [
+        {
+          "name": "@p2",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 1000,
+          "isNullable": false
+        },
+        {
+          "name": "@p3",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        },
+        {
+          "name": "@p4",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 200,
+          "isNullable": false
+        },
+        {
+          "name": "@p5",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        }
+      ],
       "executionCount": 1
     },
     {
-      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\r\nVALUES (@p0, @p1)\r\nRETURNING \u0022Id\u0022;\r\n",
+      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\nVALUES (@p0, @p1)\nRETURNING \u0022Id\u0022;\n",
       "parameterTypes": [
         "DateTime",
         "String"
       ],
+      "parameters": [
+        {
+          "name": "@p0",
+          "clrType": "DateTimeOffset",
+          "dbType": "DateTime",
+          "storeType": "TimestampTz",
+          "isNullable": false
+        },
+        {
+          "name": "@p1",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 50,
+          "isNullable": false
+        }
+      ],
       "executionCount": 2
     },
     {
-      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\r\nVALUES (@p0, @p1)\r\nRETURNING \u0022Id\u0022;\r\nINSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\r\nVALUES (@p2, @p3)\r\nRETURNING \u0022Id\u0022;\r\n",
+      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\nVALUES (@p0, @p1)\nRETURNING \u0022Id\u0022;\nINSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\nVALUES (@p2, @p3)\nRETURNING \u0022Id\u0022;\n",
       "parameterTypes": [
         "DateTime",
         "String",
         "DateTime",
         "String"
       ],
+      "parameters": [
+        {
+          "name": "@p0",
+          "clrType": "DateTimeOffset",
+          "dbType": "DateTime",
+          "storeType": "TimestampTz",
+          "isNullable": false
+        },
+        {
+          "name": "@p1",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 50,
+          "isNullable": false
+        },
+        {
+          "name": "@p2",
+          "clrType": "DateTimeOffset",
+          "dbType": "DateTime",
+          "storeType": "TimestampTz",
+          "isNullable": false
+        },
+        {
+          "name": "@p3",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 50,
+          "isNullable": false
+        }
+      ],
       "executionCount": 1
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nWHERE o.\u0022Id\u0022 = @__id_0\r\nLIMIT 1",
+      "sql": "SELECT 1",
+      "parameterTypes": [],
+      "parameters": [],
+      "executionCount": 1
+    },
+    {
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\nFROM \u0022Orders\u0022 AS o\nWHERE o.\u0022Id\u0022 = @id\nLIMIT 1",
       "parameterTypes": [
         "Int32"
       ],
-      "executionCount": 1
-    },
-    {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nWHERE o.\u0022Status\u0022 = @__status_0",
-      "parameterTypes": [
-        "String"
+      "parameters": [
+        {
+          "name": "@id",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        }
       ],
       "executionCount": 1
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022, o0.\u0022Id\u0022, o0.\u0022Description\u0022, o0.\u0022OrderId\u0022, o0.\u0022ProductName\u0022, o0.\u0022Quantity\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nLEFT JOIN \u0022OrderItems\u0022 AS o0 ON o.\u0022Id\u0022 = o0.\u0022OrderId\u0022\r\nORDER BY o.\u0022Id\u0022",
-      "parameterTypes": [],
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\nFROM \u0022Orders\u0022 AS o\nWHERE o.\u0022Status\u0022 = @status",
+      "parameterTypes": [
+        "String"
+      ],
+      "parameters": [
+        {
+          "name": "@status",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 50,
+          "isNullable": true
+        }
+      ],
       "executionCount": 1
     },
     {
-      "sql": "UPDATE \u0022OrderItems\u0022 SET \u0022Description\u0022 = \u0027\u0027 WHERE \u0022Description\u0022 IS NULL;\r\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET NOT NULL;\r\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET DEFAULT \u0027\u0027;\r\n",
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022, o0.\u0022Id\u0022, o0.\u0022Description\u0022, o0.\u0022OrderId\u0022, o0.\u0022ProductName\u0022, o0.\u0022Quantity\u0022\nFROM \u0022Orders\u0022 AS o\nLEFT JOIN \u0022OrderItems\u0022 AS o0 ON o.\u0022Id\u0022 = o0.\u0022OrderId\u0022\nORDER BY o.\u0022Id\u0022",
       "parameterTypes": [],
-      "executionCount": 2
+      "parameters": [],
+      "executionCount": 1
+    },
+    {
+      "sql": "UPDATE \u0022OrderItems\u0022 SET \u0022Description\u0022 = \u0027\u0027 WHERE \u0022Description\u0022 IS NULL;\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET NOT NULL;\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET DEFAULT \u0027\u0027;\n",
+      "parameterTypes": [],
+      "parameters": [],
+      "executionCount": 1
     }
   ]
 }

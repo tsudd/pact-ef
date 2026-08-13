@@ -1,11 +1,11 @@
 {
   "schemaVersion": "2.0",
   "consumerName": "SampleConsumer",
-  "capturedAt": "2026-08-13T16:30:55.7202648+00:00",
+  "capturedAt": "2026-08-13T17:52:13.0053066+00:00",
   "dbSchemaVersion": "20260722204044_BreakingMakeDescriptionNonNull",
   "queries": [
     {
-      "sql": "INSERT INTO \u0022OrderItems\u0022 (\u0022Description\u0022, \u0022OrderId\u0022, \u0022ProductName\u0022, \u0022Quantity\u0022)\nVALUES (@p2, @p3, @p4, @p5)\nRETURNING \u0022Id\u0022;\n",
+      "sql": "INSERT INTO \u0022OrderItems\u0022 (\u0022Description\u0022, \u0022OrderId\u0022, \u0022ProductName\u0022, \u0022Quantity\u0022)\r\nVALUES (@p2, @p3, @p4, @p5)\r\nRETURNING \u0022Id\u0022;\r\n",
       "parameterTypes": [
         "String",
         "Int32",
@@ -47,7 +47,7 @@
       "executionCount": 1
     },
     {
-      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\nVALUES (@p0, @p1)\nRETURNING \u0022Id\u0022;\n",
+      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\r\nVALUES (@p0, @p1)\r\nRETURNING \u0022Id\u0022;\r\n",
       "parameterTypes": [
         "DateTime",
         "String"
@@ -72,7 +72,7 @@
       "executionCount": 2
     },
     {
-      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\nVALUES (@p0, @p1)\nRETURNING \u0022Id\u0022;\nINSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\nVALUES (@p2, @p3)\nRETURNING \u0022Id\u0022;\n",
+      "sql": "INSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\r\nVALUES (@p0, @p1)\r\nRETURNING \u0022Id\u0022;\r\nINSERT INTO \u0022Orders\u0022 (\u0022CreatedAt\u0022, \u0022Status\u0022)\r\nVALUES (@p2, @p3)\r\nRETURNING \u0022Id\u0022;\r\n",
       "parameterTypes": [
         "DateTime",
         "String",
@@ -120,7 +120,7 @@
       "executionCount": 1
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\nFROM \u0022Orders\u0022 AS o\nWHERE o.\u0022Id\u0022 = @id\nLIMIT 1",
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nWHERE o.\u0022Id\u0022 = @id\r\nLIMIT 1",
       "parameterTypes": [
         "Int32"
       ],
@@ -136,7 +136,7 @@
       "executionCount": 1
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\nFROM \u0022Orders\u0022 AS o\nWHERE o.\u0022Status\u0022 = @status",
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nWHERE o.\u0022Status\u0022 = @status",
       "parameterTypes": [
         "String"
       ],
@@ -153,13 +153,13 @@
       "executionCount": 1
     },
     {
-      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022, o0.\u0022Id\u0022, o0.\u0022Description\u0022, o0.\u0022OrderId\u0022, o0.\u0022ProductName\u0022, o0.\u0022Quantity\u0022\nFROM \u0022Orders\u0022 AS o\nLEFT JOIN \u0022OrderItems\u0022 AS o0 ON o.\u0022Id\u0022 = o0.\u0022OrderId\u0022\nORDER BY o.\u0022Id\u0022",
+      "sql": "SELECT o.\u0022Id\u0022, o.\u0022CreatedAt\u0022, o.\u0022Status\u0022, o0.\u0022Id\u0022, o0.\u0022Description\u0022, o0.\u0022OrderId\u0022, o0.\u0022ProductName\u0022, o0.\u0022Quantity\u0022\r\nFROM \u0022Orders\u0022 AS o\r\nLEFT JOIN \u0022OrderItems\u0022 AS o0 ON o.\u0022Id\u0022 = o0.\u0022OrderId\u0022\r\nORDER BY o.\u0022Id\u0022",
       "parameterTypes": [],
       "parameters": [],
       "executionCount": 1
     },
     {
-      "sql": "UPDATE \u0022OrderItems\u0022 SET \u0022Description\u0022 = \u0027\u0027 WHERE \u0022Description\u0022 IS NULL;\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET NOT NULL;\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET DEFAULT \u0027\u0027;\n",
+      "sql": "UPDATE \u0022OrderItems\u0022 SET \u0022Description\u0022 = \u0027\u0027 WHERE \u0022Description\u0022 IS NULL;\r\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET NOT NULL;\r\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET DEFAULT \u0027\u0027;\r\n",
       "parameterTypes": [],
       "parameters": [],
       "executionCount": 1

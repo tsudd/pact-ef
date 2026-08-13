@@ -15,7 +15,14 @@ internal sealed partial class PostgreSqlQueryVerifier(string connectionString) :
         "42804", // datatype_mismatch
         "42601", // syntax_error
         "22001", // string_data_right_truncation
+        "23502", // not_null_violation
     };
+
+    // Foreign key violations are expected noise, not a schema-compatibility signal:
+    // each query is replayed in isolation without seeding rows in referenced tables,
+    // so any mutating INSERT/UPDATE into a table with a FK will violate it on a
+    // freshly migrated (empty) database regardless of schema compatibility.
+    private const string ForeignKeyViolation = "23503";
 
     [GeneratedRegex(@"^\s*(INSERT|UPDATE|DELETE)\b", RegexOptions.IgnoreCase)]
     private static partial Regex MutatingStatementRegex();
@@ -47,6 +54,10 @@ internal sealed partial class PostgreSqlQueryVerifier(string connectionString) :
             catch (PostgresException ex) when (SchemaErrorCodes.Contains(ex.SqlState ?? ""))
             {
                 return BuildFailure(ex.MessageText, ex.SqlState, variant, parameters);
+            }
+            catch (PostgresException ex) when (ex.SqlState == ForeignKeyViolation)
+            {
+                // Not a schema-compatibility failure; skip this variant.
             }
             catch (Exception ex)
             {

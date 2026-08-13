@@ -13,7 +13,7 @@
    bd dep tree ISSUE_ID
    ```
    Summarize scope in 2-4 bullets. If required blockers are unresolved, do not code — pick another ready issue.
-4. Branch per task (required). Never combine multiple features in one branch.
+4. Branch per epic (required).
 5. Implement with TDD:
    1. Explore touched modules and existing tests.
    2. Write/adjust failing test(s) for the issue behavior.

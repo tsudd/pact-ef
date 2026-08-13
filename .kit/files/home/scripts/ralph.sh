@@ -92,29 +92,31 @@ for i in $(seq 1 $MAX_ITERATIONS); do
 
   if [[ -z "$TOUCHED_JSON" || "$TOUCHED_JSON" == "null" ]]; then
     echo ""
-    echo "No beads issue was updated this iteration. Stopping Ralph."
-    exit 1
-  fi
+    echo "No beads issue was updated this iteration (likely closed with no trace, or no-op). Continuing to next ready check."
+    PROMPT="/execute-iteration
 
-  TOUCHED_ID=$(echo "$TOUCHED_JSON" | jq -r '.id')
-  TOUCHED_STATUS=$(echo "$TOUCHED_JSON" | jq -r '.status')
-  TOUCHED_NOTES=$(bd show "$TOUCHED_ID" --json 2>/dev/null | jq -r '(.data // .) | (.notes // .reason // "")')
-
-  echo ""
-  echo "Verified via beads: ${TOUCHED_ID} -> ${TOUCHED_STATUS}"
-
-  if [[ "$TOUCHED_STATUS" == "closed" ]]; then
-    echo "Issue ${TOUCHED_ID} closed. Checking for more ready work..."
+Previous iteration touched no detectable issue (may have closed one with no remaining trace). Re-check ready work."
   else
-    echo "Issue ${TOUCHED_ID} left as '${TOUCHED_STATUS}' (not closed). Carrying details to next iteration."
-  fi
+    TOUCHED_ID=$(echo "$TOUCHED_JSON" | jq -r '.id')
+    TOUCHED_STATUS=$(echo "$TOUCHED_JSON" | jq -r '.status')
+    TOUCHED_NOTES=$(bd show "$TOUCHED_ID" --json 2>/dev/null | jq -r '(.data // .) | (.notes // .reason // "")')
 
-  # Feed the outcome of this iteration into the next one so the agent has
-  # continuity instead of re-discovering state from scratch.
-  PROMPT="/execute-iteration
+    echo ""
+    echo "Verified via beads: ${TOUCHED_ID} -> ${TOUCHED_STATUS}"
+
+    if [[ "$TOUCHED_STATUS" == "closed" ]]; then
+      echo "Issue ${TOUCHED_ID} closed. Checking for more ready work..."
+    else
+      echo "Issue ${TOUCHED_ID} left as '${TOUCHED_STATUS}' (not closed). Carrying details to next iteration."
+    fi
+
+    # Feed the outcome of this iteration into the next one so the agent has
+    # continuity instead of re-discovering state from scratch.
+    PROMPT="/execute-iteration
 
 Previous iteration touched ${TOUCHED_ID} (status: ${TOUCHED_STATUS}).
 Notes: ${TOUCHED_NOTES:-none}"
+  fi
 
   echo "Iteration $i complete. Continuing..."
   sleep 2

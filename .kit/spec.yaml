@@ -30,6 +30,9 @@ setup:
     - command: "claude plugin install context-mode@context-mode"
     - command: "chmod 700 ${WORKSPACE_DIR}/.beads"
       user: "1000"
+  files:
+    - path: "/home/agent/.claude.json"
+      content: "{\"projects\":{\"${WORKDIR}\":{\"hasTrustDialogAccepted\": true}}}"
 
 environment:
   variables:

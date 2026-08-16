@@ -157,12 +157,6 @@
       "parameterTypes": [],
       "parameters": [],
       "executionCount": 1
-    },
-    {
-      "sql": "UPDATE \u0022OrderItems\u0022 SET \u0022Description\u0022 = \u0027\u0027 WHERE \u0022Description\u0022 IS NULL;\r\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET NOT NULL;\r\nALTER TABLE \u0022OrderItems\u0022 ALTER COLUMN \u0022Description\u0022 SET DEFAULT \u0027\u0027;\r\n",
-      "parameterTypes": [],
-      "parameters": [],
-      "executionCount": 1
     }
   ]
 }

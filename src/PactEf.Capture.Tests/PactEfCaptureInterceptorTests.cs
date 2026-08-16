@@ -79,4 +79,28 @@ public class PactEfCaptureInterceptorTests : IDisposable
         Assert.Null(metadata.Size);
         Assert.Null(metadata.MaxLength);
     }
+
+    [Theory]
+    [InlineData("ALTER TABLE \"OrderItems\" ALTER COLUMN \"Description\" SET NOT NULL;")]
+    [InlineData(
+        "UPDATE \"OrderItems\" SET \"Description\" = '' WHERE \"Description\" IS NULL;\n" +
+        "ALTER TABLE \"OrderItems\" ALTER COLUMN \"Description\" SET NOT NULL;\n" +
+        "ALTER TABLE \"OrderItems\" ALTER COLUMN \"Description\" SET DEFAULT '';")]
+    [InlineData("CREATE TABLE \"Foo\" (\"Id\" integer NOT NULL);")]
+    [InlineData("DROP TABLE \"Foo\";")]
+    [InlineData("CREATE INDEX \"IX_Foo\" ON \"Foo\" (\"Id\");")]
+    public void IsDdl_MigrationStatements_ReturnsTrue(string sql)
+    {
+        Assert.True(PactEfCaptureInterceptor.IsDdl(sql));
+    }
+
+    [Theory]
+    [InlineData("SELECT * FROM \"OrderItems\" WHERE \"Id\" = @p0")]
+    [InlineData("INSERT INTO \"OrderItems\" (\"Description\") VALUES (@p0)")]
+    [InlineData("UPDATE \"OrderItems\" SET \"Description\" = @p0 WHERE \"Id\" = @p1")]
+    [InlineData("DELETE FROM \"OrderItems\" WHERE \"Id\" = @p0")]
+    public void IsDdl_ConsumerStatements_ReturnsFalse(string sql)
+    {
+        Assert.False(PactEfCaptureInterceptor.IsDdl(sql));
+    }
 }

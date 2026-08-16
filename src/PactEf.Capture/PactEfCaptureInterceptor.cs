@@ -1,4 +1,5 @@
 using System.Data.Common;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Npgsql;
 using PactEf.Capture.TestContext;
@@ -19,6 +20,13 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
             "__EFMigrationsHistory",
             "__EFMigrationsLock"
         };
+
+    // EF Core migration application batches DDL together with DML in a single command
+    // (e.g. "UPDATE ...; ALTER TABLE ... SET NOT NULL;"), so a prefix check on the
+    // command text is not enough; DDL keywords must be searched for anywhere in the SQL.
+    private static readonly Regex DdlPattern = new(
+        @"\b(CREATE|ALTER|DROP)\s+(TABLE|INDEX|SEQUENCE|SCHEMA|VIEW|TYPE|FUNCTION)\b",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private readonly CaptureOptions _options;
     private readonly QueryBuffer _buffer = new();
@@ -72,7 +80,7 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
     {
         var sql = command.CommandText;
 
-        if (!IsDml(sql) || IsInfraQuery(sql))
+        if (!IsDml(sql) || IsInfraQuery(sql) || IsDdl(sql))
             return;
 
         // Lazy schema version capture on first DML command
@@ -123,6 +131,8 @@ public sealed class PactEfCaptureInterceptor : DbCommandInterceptor
 
     private static bool IsInfraQuery(string sql) =>
         InfraPatterns.Any(p => sql.Contains(p, StringComparison.OrdinalIgnoreCase));
+
+    internal static bool IsDdl(string sql) => DdlPattern.IsMatch(sql);
 
     /// <summary>
     /// Flushes this interceptor's buffer alone to a snapshot file.

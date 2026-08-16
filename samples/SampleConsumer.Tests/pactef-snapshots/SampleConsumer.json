@@ -1,7 +1,7 @@
 {
   "schemaVersion": "2.0",
   "consumerName": "SampleConsumer",
-  "capturedAt": "2026-08-13T17:52:13.0053066+00:00",
+  "capturedAt": "2026-08-16T18:12:03.9191325+00:00",
   "dbSchemaVersion": "20260722204044_BreakingMakeDescriptionNonNull",
   "queries": [
     {

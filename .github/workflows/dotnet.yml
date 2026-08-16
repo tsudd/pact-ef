@@ -25,4 +25,7 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
+      env:
+        PACTEF_SNAPSHOT_PATHS: ${{ github.workspace }}/samples/BrokenSampleConsumer.Tests/pactef-snapshots
+        CUSTOM_SNAPSHOT_PATHS: ${{ github.workspace }}/samples/SampleConsumer.Tests/pactef-snapshots
       run: dotnet test --no-build --verbosity normal

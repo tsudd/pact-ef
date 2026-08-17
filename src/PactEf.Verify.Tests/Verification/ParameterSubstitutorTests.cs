@@ -105,6 +105,77 @@ public class ParameterSubstitutorTests
     }
 
     [Fact]
+    public void Substitute_ParametersOutOfSqlOrder_MatchesPlaceholdersByName()
+    {
+        // Arrange: EF Core emits the UPDATE condition parameter (@p1) first in
+        // DbCommand.Parameters, so the metadata order does not match order of appearance.
+        var sql = "UPDATE \"OrderItems\" SET \"Description\" = @p0\nWHERE \"Id\" = @p1;\n";
+        var parameters = new[]
+        {
+            new ParameterMetadata { Name = "@p1", ClrType = "Int32" },
+            new ParameterMetadata { Name = "@p0", ClrType = "String" }
+        };
+
+        // Act
+        var result = ParameterSubstitutor.Substitute(sql, parameters);
+
+        // Assert
+        Assert.Equal("UPDATE \"OrderItems\" SET \"Description\" = ''\nWHERE \"Id\" = 0;\n", result);
+    }
+
+    [Fact]
+    public void Substitute_ValueOverride_ParametersOutOfSqlOrder_AppliesToNamedPlaceholder()
+    {
+        // Arrange: the boundary literal for the string parameter must land in the
+        // "Description" slot, not in the integer "Id" slot.
+        var sql = "UPDATE \"OrderItems\" SET \"Description\" = @p0\nWHERE \"Id\" = @p1;\n";
+        var parameters = new[]
+        {
+            new ParameterMetadata { Name = "@p1", ClrType = "Int32" },
+            new ParameterMetadata { Name = "@p0", ClrType = "String", MaxLength = 3 }
+        };
+        var overrides = new Dictionary<int, string> { [1] = "'AAA'" };
+
+        // Act
+        var result = ParameterSubstitutor.Substitute(sql, parameters, overrides);
+
+        // Assert
+        Assert.Equal("UPDATE \"OrderItems\" SET \"Description\" = 'AAA'\nWHERE \"Id\" = 0;\n", result);
+    }
+
+    [Fact]
+    public void Substitute_RepeatedPlaceholder_UsesSameParameterMetadata()
+    {
+        // Arrange
+        var sql = "SELECT * FROM \"Orders\" WHERE \"Id\" = @p0 OR \"ParentId\" = @p0";
+        var parameters = new[] { new ParameterMetadata { Name = "@p0", ClrType = "Int32" } };
+
+        // Act
+        var result = ParameterSubstitutor.Substitute(sql, parameters);
+
+        // Assert
+        Assert.Equal("SELECT * FROM \"Orders\" WHERE \"Id\" = 0 OR \"ParentId\" = 0", result);
+    }
+
+    [Fact]
+    public void Substitute_UnnamedParameters_FallsBackToOrderOfAppearance()
+    {
+        // Arrange: legacy v1 snapshots carry no parameter names
+        var sql = "INSERT INTO \"Orders\" (\"CreatedAt\", \"Status\")\nVALUES (@p0, @p1)\nRETURNING \"Id\";\n";
+        var parameters = new[]
+        {
+            new ParameterMetadata { ClrType = "DateTime" },
+            new ParameterMetadata { ClrType = "String" }
+        };
+
+        // Act
+        var result = ParameterSubstitutor.Substitute(sql, parameters);
+
+        // Assert
+        Assert.Equal("INSERT INTO \"Orders\" (\"CreatedAt\", \"Status\")\nVALUES ('2000-01-01', '')\nRETURNING \"Id\";\n", result);
+    }
+
+    [Fact]
     public void Substitute_ValueOverride_UsesCallerSuppliedLiteralInsteadOfDefault()
     {
         // Arrange

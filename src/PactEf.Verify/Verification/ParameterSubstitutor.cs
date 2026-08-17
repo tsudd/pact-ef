@@ -76,6 +76,15 @@ internal static partial class ParameterSubstitutor
         IReadOnlyList<ParameterMetadata> parameters,
         Func<int, string> literalAt)
     {
+        // Prefer matching each placeholder to the parameter that carries the same name:
+        // DbCommand.Parameters order is not the order of appearance in the SQL (EF Core emits
+        // UPDATE ... SET x = @p0 WHERE "Id" = @p1 with @p1 first), so a purely positional
+        // mapping would substitute a parameter's literal - including a boundary-value
+        // override - into another parameter's slot.
+        var byName = BuildNameIndex(parameters);
+        if (byName is not null && NamedParamRegex.Matches(sql).All(m => byName.ContainsKey(NormalizeName(m.Value))))
+            return NamedParamRegex.Replace(sql, m => literalAt(byName[NormalizeName(m.Value)]));
+
         var index = 0;
         return NamedParamRegex.Replace(sql, _ =>
         {
@@ -84,4 +93,25 @@ internal static partial class ParameterSubstitutor
             return "null";
         });
     }
+
+    // Null when names are missing (legacy v1 snapshots) or ambiguous, which forces the
+    // positional fallback.
+    private static Dictionary<string, int>? BuildNameIndex(IReadOnlyList<ParameterMetadata> parameters)
+    {
+        var byName = new Dictionary<string, int>(StringComparer.Ordinal);
+
+        for (var i = 0; i < parameters.Count; i++)
+        {
+            var name = parameters[i].Name;
+            if (string.IsNullOrWhiteSpace(name))
+                return null;
+
+            if (!byName.TryAdd(NormalizeName(name), i))
+                return null;
+        }
+
+        return byName;
+    }
+
+    private static string NormalizeName(string name) => name.TrimStart('@');
 }

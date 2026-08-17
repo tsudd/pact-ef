@@ -71,7 +71,12 @@ samples/
 - **Multiple interceptors per run.** One `PactEfCaptureInterceptor` per `DbContext` instance. `PactEfAssemblyFixture.DisposeAsync` groups interceptors by `ConsumerName` and calls `FlushMergedAsync`, which merges all queries from the same consumer into one snapshot.
 - **Snapshot paths must be absolute** when passed via `PACTEF_SNAPSHOT_PATHS`. The test runner's working directory is not the solution root, so relative paths do not resolve. `FromFolder` paths should also be absolute or anchored to the test runner's CWD.
 - **`SnapshotLoader` skips missing directories** (no exception). This allows CI-specific `FromFolder` paths to coexist with local `FromEnvVariable` overrides.
-- **`ParameterSubstitutor` handles Npgsql `@name` style AND PostgreSQL `$N` positional style.** The regex `@\w+` matches params in order of appearance, mapping them to typed literals (`0`, `''`, `'2000-01-01'`, etc.).
+- **`ParameterSubstitutor` handles Npgsql `@name` style AND PostgreSQL `$N` positional style.** The regex
+  `@\w+` finds the placeholders; each is matched to the `ParameterMetadata` with the same `Name` (`@`
+  optional), falling back to order of appearance only when names are missing (legacy v1 snapshots) or
+  ambiguous. Name matching is required because `DbCommand.Parameters` order is *not* the SQL order — EF Core
+  emits `UPDATE "T" SET "C" = @p0 WHERE "Id" = @p1` with `@p1` first — so positional mapping would drop a
+  boundary literal into the wrong column (e.g. a 1000-char string into an integer `Id`, `22P02`).
 - **Parameter metadata resolution is best-effort and never fatal.** Both `ModelParameterMetadataResolver`
   (capture) and `SqlColumnReferenceResolver`/`DatabaseColumnLengthResolver` (verify) map parameters to columns
   by matching SQL text, because `DbCommandInterceptor` exposes only the rendered SQL and provider-level

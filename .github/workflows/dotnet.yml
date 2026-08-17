@@ -26,6 +26,9 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       env:
-        PACTEF_SNAPSHOT_PATHS: ${{ github.workspace }}/samples/BrokenSampleConsumer.Tests/pactef-snapshots
-        CUSTOM_SNAPSHOT_PATHS: ${{ github.workspace }}/samples/SampleConsumer.Tests/pactef-snapshots
+        # AllConsumerSnapshots_AreCompatibleWithCurrentSchema reads PACTEF_SNAPSHOT_PATHS and
+        # must pass, so it gets the compatible consumer. BrokenConsumer_ShouldFailWithBreakingMigration
+        # reads CUSTOM_SNAPSHOT_PATHS and expects a verification failure, so it gets the broken one.
+        PACTEF_SNAPSHOT_PATHS: ${{ github.workspace }}/samples/SampleConsumer.Tests/pactef-snapshots
+        CUSTOM_SNAPSHOT_PATHS: ${{ github.workspace }}/samples/BrokenSampleConsumer.Tests/pactef-snapshots
       run: dotnet test --no-build --verbosity normal

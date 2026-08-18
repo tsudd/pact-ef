@@ -2,8 +2,8 @@ name: publish-pact-ef-packages
 run-name: "[PUBLISH] ${{ inputs.project }} - ${{ inputs.version }}"
 
 on:
-  workflow_call: 
-    inputs: 
+  workflow_dispatch:
+    inputs:
       project:
         description: 'Select a project to publish'
         required: true
@@ -11,9 +11,9 @@ on:
         options:
           - PactEf.Capture
           - PactEf.Verify
-#          - All
       version:
         description: 'Version to publish (e.g. 1.0.0 or 1.0.0-beta1)'
+        type: string
         required: true
 
 jobs:

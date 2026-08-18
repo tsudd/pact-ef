@@ -97,21 +97,56 @@ The test spins up a real database (Testcontainers), applies all migrations, then
 
 ## Snapshot Format
 
+Current format is **v2** (`"schemaVersion": "2.0"`).
+
 ```json
 {
-  "schemaVersion": "1.0",
+  "schemaVersion": "2.0",
   "consumerName": "SampleConsumer",
   "capturedAt": "2026-05-18T16:42:30Z",
   "dbSchemaVersion": "20260514000000_InitialCreate",
   "queries": [
     {
-      "sql": "SELECT o.\"Id\", o.\"CreatedAt\", o.\"Status\"\nFROM \"Orders\" AS o\nWHERE o.\"Id\" = @__id_0\nLIMIT 1",
-      "parameterTypes": ["Int32"],
+      "sql": "INSERT INTO \"OrderItems\" (\"Description\", \"OrderId\")\nVALUES (@p0, @p1)\nRETURNING \"Id\";\n",
+      "parameterTypes": ["String", "Int32"],
+      "parameters": [
+        {
+          "name": "@p0",
+          "clrType": "String",
+          "dbType": "String",
+          "storeType": "Varchar",
+          "maxLength": 1000,
+          "isNullable": true
+        },
+        {
+          "name": "@p1",
+          "clrType": "Int32",
+          "dbType": "Int32",
+          "storeType": "Integer",
+          "isNullable": false
+        }
+      ],
       "executionCount": 1
     }
   ]
 }
 ```
+
+`parameters[]` (v2 metadata) map 1:1 to `ParameterMetadata`: `name`, `clrType`, `dbType`, `storeType`,
+`maxLength`, `precision`, `scale`, `isNullable`, `size`. All fields nullable — `null` means *unknown*, not
+unconstrained; a missing `maxLength`/`isNullable` just means capture couldn't resolve the column, not that
+it's unbounded/`NOT NULL`.
+
+`name` matters: `parameters` order follows `DbCommand.Parameters` order, which is **not** SQL appearance
+order (e.g. EF Core emits `UPDATE ... SET "C" = @p0 WHERE "Id" = @p1` with `@p1` bound first). Verification
+matches parameters to placeholders by `name`, falling back to position only for legacy v1 snapshots or
+unnamed/ambiguous params — matching positionally in the general case can substitute a boundary literal into
+the wrong column.
+
+`parameterTypes` is still written for backward compatibility but is legacy; `parameters` is authoritative.
+Old v1 snapshots (no `parameters`) still load and verify — `SnapshotSerializer` backfills one
+`ParameterMetadata` per entry from `parameterTypes` (only `ClrType` set, no boundary variants from the
+consumer side).
 
 ## Verification Modes
 

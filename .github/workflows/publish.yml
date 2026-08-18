@@ -37,21 +37,9 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Pack Selected Project
-          run: |
-            # Set path target based on selection
-            if [ "${{ inputs.project }}" = "ALL" ]; then
-            TARGET="src/**/*.csproj"
-            else
-            TARGET="src/${{ inputs.project }}/${{ inputs.project }}.csproj"
-            fi
-            
-            # Append version suffix flag if provided
-            EXTRA_FLAGS=""
-            if [ -n "${{ inputs.version_suffix }}" ]; then
-            EXTRA_FLAGS="/p:VersionSuffix=${{ inputs.version_suffix }}"
-            fi
-            
-            dotnet pack $TARGET -c Release -o ./artifacts $EXTRA_FLAGS
+        run: |
+          TARGET="src/${{ inputs.project }}/${{ inputs.project }}.csproj"
+          dotnet pack $TARGET -c Release -o ./artifacts /p:Version=${{ inputs.version }}
 
       - name: Push to NuGet
         run: |

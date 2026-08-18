@@ -1,0 +1,66 @@
+name: Publish Multi-Package Release
+run-name: "[PUBLISH] ${{ inputs.project }} - ${{ inputs.version }}"
+
+on:
+  workflow_dispatch: 
+    inputs: 
+      project:
+        description: 'Select a project to publish'
+        required: true
+        type: choice
+        options:
+          - PactEf.Capture
+          - PactEf.Verify
+#          - All
+      version:
+        description: 'Version to publish (e.g. 1.0.0 or 1.0.0-beta1)'
+        required: true
+        default: '1.0.0'
+  push:
+    tags:
+      - 'PactEf.Capture-v*'
+      - 'PactEf.Verify-v*'
+
+jobs:
+  publish:
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: NuGet login
+        uses: Nuget/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Pack Selected Project
+          run: |
+            # Set path target based on selection
+            if [ "${{ inputs.project }}" = "ALL" ]; then
+            TARGET="src/**/*.csproj"
+            else
+            TARGET="src/${{ inputs.project }}/${{ inputs.project }}.csproj"
+            fi
+            
+            # Append version suffix flag if provided
+            EXTRA_FLAGS=""
+            if [ -n "${{ inputs.version_suffix }}" ]; then
+            EXTRA_FLAGS="/p:VersionSuffix=${{ inputs.version_suffix }}"
+            fi
+            
+            dotnet pack $TARGET -c Release -o ./artifacts $EXTRA_FLAGS
+
+      - name: Push to NuGet
+        run: |
+          dotnet nuget push "./artifacts/*.nupkg" \
+            --api-key ${{steps.login.outputs.NUGET_API_KEY}} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
